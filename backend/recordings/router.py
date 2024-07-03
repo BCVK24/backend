@@ -12,6 +12,9 @@ async def GetFile(VkToken: str = Form(), FileId: int = Form()):
 # POST FILE
 @router.post('/RecordingFile')
 async def PostFile(File: UploadFile = File(), VkToken: str = Form()):
+    Write = open(File.filename, 'wb')
+    Write.write(await File.read())
+    Write.close()
     return 0
 
 # CHANGE FILE
