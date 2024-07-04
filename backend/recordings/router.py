@@ -18,11 +18,7 @@ ClientS3 = S3Client("...", "...", "...", "...")
 
 
 async def get_user_id(token: str) -> int:
-    return 0
-
-
-async def sound_filtration(file_url: str) -> bytes:
-    return await ClientS3.get_file(file_url)
+    return 1
 
 
 @router.get('/{recording_id}')
@@ -44,8 +40,7 @@ async def get_recording(recording_id: int, token: str = Depends(oauth2_scheme),
 
 @router.get('/download/{file_id}')
 async def get_recording_data(file_url: str) -> bytes:
-    bytes = bytes(0)
-    return bytes
+    return await ClientS3.get_file(file_url)
 
 
 @router.post('/')
