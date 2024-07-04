@@ -16,6 +16,7 @@ pydantic-settings = "^2.3.4"
 asyncpg = "^0.29.0"
 aiobotocore = "^2.13.1"
 numpy = "^2.0.0"
+scipy = "^1.14.0"
 
 
 [build-system]
