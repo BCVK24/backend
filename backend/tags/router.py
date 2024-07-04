@@ -20,6 +20,7 @@ async def delete_tag(tag_id: int, token: str = Depends(oauth2_scheme),
                      session: AsyncSession = Depends(get_session)) -> TagRead:
     pass  # Delete tag by id
 
+
 @router.post('/')
 async def create_tag(tag):
     pass
