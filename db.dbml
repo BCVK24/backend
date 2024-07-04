@@ -1,0 +1,32 @@
+// Deprecated
+
+Enum description {
+  Silent
+  // ...
+}
+
+Table users {
+  vk_id integer [primary key]
+}
+
+Table audio {
+  id integer [primary key]
+  url varchar [not null]
+  creator_id integer [ref: > users.vk_id, not null]
+  created_at timestamp [not null]
+}
+
+Table results {
+  id integer [primary key]
+  source_id integer [ref: > audio.id, not null] 
+  url varchar [not null]
+  created_at timestamp [not null]
+}
+
+Table tags {
+  id integer [primary key]
+  audio_id integer [ref: > audio.id, not null]
+  start integer [note: 'milliseconds', not null]
+  end integer [note: 'milliseconds', not null]
+  description description [not null]
+}
