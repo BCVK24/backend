@@ -7,8 +7,8 @@ from sqlalchemy.exc import IntegrityError
 
 from ..db.dependencies import get_session
 from ..users.auth import get_user_id, oauth2_scheme
-from ..users.models import User
 from .models import Recording
+from .schemas import RecordingRead
 from .relschemas import RecordingRel
 from .S3Model import S3Client
 
@@ -44,13 +44,14 @@ async def get_recording(recording_id: int, token: str = Depends(oauth2_scheme),
 
 @router.get('/download/{file_id}')
 async def get_recording_data(file_url: str) -> bytes:
+    # get recording audio file from s3
     bytes = bytes(0)
     return bytes
 
 
 @router.post('/')
 async def upload_recording(recording_file: UploadFile = File(), token: str = Depends(oauth2_scheme),
-                           session: AsyncSession = Depends(get_session)):
+                           session: AsyncSession = Depends(get_session)) -> RecordingRead:
     user_id = await get_user_id(token)
     url = await ClientS3.push_file(await recording_file.read(), user_id)
 
@@ -58,10 +59,6 @@ async def upload_recording(recording_file: UploadFile = File(), token: str = Dep
 
     session.add(recording)
 
-    try:
-        await session.commit()
-    except IntegrityError as err:
-        raise HTTPException(401)
+    await session.commit()
 
-    return {'recording_id': recording.id}
-
+    return RecordingRead.model_validate(recording, from_attributes=True)
