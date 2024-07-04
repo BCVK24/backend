@@ -70,6 +70,21 @@ async def get_result_data(result_id: int, token: str = Depends(oauth2_scheme),
     return {'result': str(await ClientS3.get_file(result.url))}
 
 
+@router.post('/{result_id}')
+async def cut_file(result_id: int, token: str = Depends(oauth2_scheme),
+                   session: AsyncSession = Depends(get_session)):
+    user_id = await get_user_id(token)
+
+    result = await session.scalar(Result.get_by_id(result_id))
+
+    if not result:
+        raise HTTPException(404)
+
+    bytes = ClientS3.get_file(result.url)
+
+    return {'cut_result': str(bytes)}
+
+
 @router.post('/{recording_id}')
 async def create_result(recording_id: int, token: str = Depends(oauth2_scheme),
                         session: AsyncSession = Depends(get_session)):
