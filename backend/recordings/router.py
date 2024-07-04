@@ -1,6 +1,6 @@
 import wave
 
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Form
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
@@ -39,8 +39,18 @@ async def get_recording(recording_id: int, token: str = Depends(oauth2_scheme),
 
 
 @router.get('/download/{file_id}')
-async def get_recording_data(file_url: str):
-    return {'recording': str(await ClientS3.get_file(file_url))}
+async def get_recording_data(file_id: int, token: str = Depends(oauth2_scheme), session: AsyncSession = Depends(get_session)):
+    user_id = await get_user_id(token)
+
+    recording = await (session.scalar(Recording.get_by_id(file_id)))
+
+    if not recording:
+        raise HTTPException(404)
+
+    if recording.creator_id != user_id:
+        raise HTTPException(401)
+
+    return {'recording': str(await ClientS3.get_file(recording.url))}
 
 
 @router.post('/')

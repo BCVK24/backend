@@ -57,9 +57,17 @@ async def get_result(result_id: int, token: str = Depends(oauth2_scheme),
     return ResultRel.model_validate(result, from_attributes=True)
 
 
-@router.get('/download/{result_url}')
-async def get_result_data(result_url: str):
-    return {'result':  str(await ClientS3.get_file(result_url))}
+@router.get('/download/{result_id}')
+async def get_result_data(result_id: int, token: str = Depends(oauth2_scheme),
+                          session: AsyncSession = Depends(get_session)):
+    user_id = await get_user_id(token)
+
+    result = await session.scalar(Result.get_by_id(result_id))
+
+    if not result:
+        raise HTTPException(404)
+
+    return {'result': str(await ClientS3.get_file(result.url))}
 
 
 @router.post('/{recording_id}')
