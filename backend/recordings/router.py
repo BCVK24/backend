@@ -39,8 +39,8 @@ async def get_recording(recording_id: int, token: str = Depends(oauth2_scheme),
 
 
 @router.get('/download/{file_id}')
-async def get_recording_data(file_url: str) -> bytes:
-    return await ClientS3.get_file(file_url)
+async def get_recording_data(file_url: str):
+    return {'recording': str(await ClientS3.get_file(file_url))}
 
 
 @router.post('/')

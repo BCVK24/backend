@@ -24,11 +24,13 @@ class S3Client:
 
     async def push_file(self, FileData: bytes, UserId: int) -> str:
 
-        f = open(f'/local_save/{UserId}{datetime.now()}.wav', 'wb')
+        url = f'local_save/{UserId}{datetime.now()}.wav'
+
+        f = open(url, 'wb')
         f.write(FileData)
         f.close()
 
-        return '/local_save/{UserId}{datetime.now()}.wav'
+        return url
 
     async def get_file(self, url: str):
         return open(url, 'rb').read()

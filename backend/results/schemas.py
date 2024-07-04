@@ -8,7 +8,7 @@ class ResultBase(BaseModel):
 
 class ResultRead(ResultBase):
     id: int
-    url: AnyUrl
+    url: str
     created_at: dt.datetime
 
 

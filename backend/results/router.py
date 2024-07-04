@@ -1,3 +1,5 @@
+import io
+
 import numpy as np
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +12,6 @@ from ..users.auth import get_user_id, oauth2_scheme
 from .relschemas import ResultRel
 
 import wave
-from scipy.signal import medfilt
 
 router = APIRouter(prefix='/result', tags=['result'])
 
@@ -20,12 +21,19 @@ def average(data, kernel_size):
     return (cumsum[kernel_size:] - cumsum[:-kernel_size]) / kernel_size
 
 
+def medfilt(data, kernel_size):
+    result = np.zeros(len(data))
+    for i in range(len(data)):
+        result[i] = np.median(data[max(i - kernel_size, 0): min(i + kernel_size, len(data))])
+    return result
+
+
 async def sound_filtration(file_url: str) -> bytes:
     sound_data = await ClientS3.get_file(file_url)
 
-    with wave.open(sound_data) as sound:
-        params = sound.get_params()
-        data = np.frombuffer(sound.get_frames(params.nframes), dtype=np.int16)
+    with wave.open(io.BytesIO(sound_data)) as sound:
+        params = sound.getparams()
+        data = np.frombuffer(sound.readframes(params.nframes), dtype=np.int16)
 
     result = average(medfilt(data, 3), 3)
     result = np.pad(result, (0, len(data) - len(result)))
@@ -38,7 +46,7 @@ async def sound_filtration(file_url: str) -> bytes:
 async def get_result(result_id: int, token: str = Depends(oauth2_scheme),
                      session: AsyncSession = Depends(get_session)) -> ResultRel:
 
-    user_id = get_user_id(token)
+    user_id = await get_user_id(token)
 
     query = Result.get_by_id(result_id)
     result = await session.scalar(query)
@@ -46,14 +54,12 @@ async def get_result(result_id: int, token: str = Depends(oauth2_scheme),
     if not result:
         raise HTTPException(404)
 
-    if result.creator.id != user_id:
-        raise HTTPException(401)
-
     return ResultRel.model_validate(result, from_attributes=True)
 
 
+@router.get('/download/{result_url}')
 async def get_result_data(result_url: str):
-    return await ClientS3.get_file(result_url)
+    return {'result':  str(await ClientS3.get_file(result_url))}
 
 
 @router.post('/{recording_id}')
