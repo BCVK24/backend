@@ -1,6 +1,7 @@
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from ..db.crud import CRUD
 from ..db.database import Base
 from ..db.annotations import intpk, dtnow
 from ..db.crud import CRUD

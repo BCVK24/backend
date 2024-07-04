@@ -16,4 +16,6 @@ class TagRead(TagBase):
 
 
 class TagUpdate(TagBase):
-    pass
+    id: int
+    start: int
+    end: int
