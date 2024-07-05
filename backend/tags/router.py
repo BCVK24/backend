@@ -38,7 +38,7 @@ async def create_tag(tag: TagCreate, token: str = Depends(oauth2_scheme),
                      session: AsyncSession = Depends(get_session)):
     user_id = get_user_id(token)
 
-    tag_get = Tag(recording_id=tag.recording_id, start=tag.start, end=tag.end)
+    tag_get = Tag(recording_id=tag.recording_id, start=tag.start, end=tag.end, description=tag.description)
 
     session.add(tag_get)
 

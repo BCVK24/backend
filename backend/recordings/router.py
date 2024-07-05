@@ -11,7 +11,7 @@ from ..users.models import User
 from .models import Recording
 from .relschemas import RecordingRel
 from .S3Model import S3Client
-from .schemas import RecordingRead
+from .schemas import RecordingRead, RecordingCreate
 
 
 router = APIRouter(prefix='/recording', tags=['recording'])
@@ -55,18 +55,18 @@ async def get_recording_data(file_id: int, token: str = Depends(oauth2_scheme), 
 
 
 @router.post('/')
-async def upload_recording(recording_file: UploadFile = File(), token: str = Depends(oauth2_scheme),
-                           session: AsyncSession = Depends(get_session)):
+async def upload_recording(recording: str = Form(), recording_file: UploadFile = File(),
+                           token: str = Depends(oauth2_scheme), session: AsyncSession = Depends(get_session)):
     user_id = await get_user_id(token)
     url = await ClientS3.push_file(await recording_file.read(), user_id)
 
-    recording = Recording(url=url, creator_id=user_id)
+    recording_db = Recording(url=url, creator_id=user_id, title=recording)
 
-    session.add(recording)
+    session.add(recording_db)
 
     try:
         await session.commit()
     except IntegrityError as err:
         raise HTTPException(401)
 
-    return RecordingRead.model_validate(recording, from_attributes=True)
+    return RecordingRead.model_validate(recording_db, from_attributes=True)

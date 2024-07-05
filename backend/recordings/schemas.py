@@ -8,10 +8,10 @@ class RecordingBase(BaseModel):
 
 class RecordingRead(RecordingBase):
     id: int
-    url: str
     created_at: dt.datetime
     creator_id: int
+    title: str
 
 
 class RecordingCreate(RecordingBase):
-    pass
+    title: str

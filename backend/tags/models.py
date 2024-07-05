@@ -10,6 +10,7 @@ from ..db.annotations import intpk
 
 class TagDescription(enum.Enum):
     Silent = "SILENT"
+    Custom = "CUSTOM"
 
 
 class Tag(Base, CRUD):

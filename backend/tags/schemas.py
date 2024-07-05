@@ -25,3 +25,4 @@ class TagCreate(TagBase):
     recording_id: int
     start: int
     end: int
+    description: TagDescription = TagDescription.Custom
