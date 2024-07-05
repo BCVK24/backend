@@ -10,6 +10,7 @@ from ..recordings.models import Recording
 from ..recordings.router import ClientS3
 from ..users.auth import get_user_id, oauth2_scheme
 from .relschemas import ResultRel
+from .schemas import ResultRead
 
 import wave
 
@@ -70,28 +71,12 @@ async def get_result_data(result_id: int, token: str = Depends(oauth2_scheme),
     return {'result': str(await ClientS3.get_file(result.url))}
 
 
-@router.post('/{result_id}')
-async def cut_file(result_id: int, token: str = Depends(oauth2_scheme),
-                   session: AsyncSession = Depends(get_session)):
-    user_id = await get_user_id(token)
-
-    result = await session.scalar(Result.get_by_id(result_id))
-
-    if not result:
-        raise HTTPException(404)
-
-    bytes = ClientS3.get_file(result.url)
-
-    return {'cut_result': str(bytes)}
-
-
 @router.post('/{recording_id}')
 async def create_result(recording_id: int, token: str = Depends(oauth2_scheme),
                         session: AsyncSession = Depends(get_session)):
     user_id = await get_user_id(token)
 
-    query = Recording.get_by_id(recording_id)
-    recording = await session.scalar(query)
+    recording = await session.scalar(Recording.get_by_id(recording_id))
 
     if recording is None:
         raise HTTPException(404)
@@ -99,16 +84,14 @@ async def create_result(recording_id: int, token: str = Depends(oauth2_scheme),
     if recording.creator_id != user_id:
         raise HTTPException(401)
 
-    bytes = await sound_filtration(recording.url)
-    # WORKING WITH SOUND
+    byte = await sound_filtration(recording.url)
 
-    # WORKING WITH SOUND
-    url = await ClientS3.push_file(bytes, user_id)
+    url = await ClientS3.push_file(byte, user_id)
 
-    result = Result( source_id=recording.id, url=url)
+    result = Result(source_id=recording.id, url=url)
 
     session.add(result)
 
     await session.commit()
 
-    return {'result_id': result.id}
+    return ResultRead.model_validate(result, from_attributes=True)

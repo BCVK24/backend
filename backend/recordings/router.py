@@ -11,6 +11,7 @@ from ..users.models import User
 from .models import Recording
 from .relschemas import RecordingRel
 from .S3Model import S3Client
+from .schemas import RecordingRead
 
 
 router = APIRouter(prefix='/recording', tags=['recording'])
@@ -68,5 +69,4 @@ async def upload_recording(recording_file: UploadFile = File(), token: str = Dep
     except IntegrityError as err:
         raise HTTPException(401)
 
-    return {'recording_id': recording.id}
-
+    return RecordingRead.model_validate(recording, from_attributes=True)

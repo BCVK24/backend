@@ -19,3 +19,9 @@ class TagUpdate(TagBase):
     id: int
     start: int
     end: int
+
+
+class TagCreate(TagBase):
+    recording_id: int
+    start: int
+    end: int

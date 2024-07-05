@@ -34,8 +34,3 @@ class S3Client:
 
     async def get_file(self, url: str):
         return open(url, 'rb').read()
-
-    async def put_file(self, FileData: bytes, Url: int):
-        f = open(Url, 'wb')
-        f.write(FileData)
-        f.close()
