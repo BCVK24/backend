@@ -23,10 +23,14 @@ async def update_tag(tag: TagUpdate, token: str = Depends(oauth2_scheme),
 @router.delete('/{tag_id}')
 async def delete_tag(tag_id: int, token: str = Depends(oauth2_scheme),
                      session: AsyncSession = Depends(get_session)) -> TagRead:
-    tag_get = Tag.get_by_id(tag_id)
+    tag_get = await session.scalar(Tag.get_by_id(tag_id))
+
+    if not tag_get:
+        raise HTTPException(404)
+
     tag_return = TagRead.model_validate(tag_get, from_attributes=True)
 
-    tag_db = session.delete(tag_get)
+    await session.delete(tag_get)
 
     await session.commit()
 
@@ -38,7 +42,7 @@ async def create_tag(tag: TagCreate, token: str = Depends(oauth2_scheme),
                      session: AsyncSession = Depends(get_session)):
     user_id = get_user_id(token)
 
-    tag_get = Tag(recording_id=tag.recording_id, start=tag.start, end=tag.end, description=tag.description)
+    tag_get = Tag(**tag.model_dump())
 
     session.add(tag_get)
 

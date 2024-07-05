@@ -12,7 +12,7 @@ class TagRead(TagBase):
     recording_id: int
     start: int
     end: int
-    description: TagDescription
+    description: str
 
 
 class TagUpdate(TagBase):
@@ -25,4 +25,4 @@ class TagCreate(TagBase):
     recording_id: int
     start: int
     end: int
-    description: TagDescription = TagDescription.Custom
+    description: TagDescription
