@@ -20,6 +20,7 @@ async def update_tag(tag: TagUpdate, token: str = Depends(oauth2_scheme),
 
     return TagRead.model_validate(tag_db, from_attributes=True)
 
+
 @router.delete('/{tag_id}')
 async def delete_tag(tag_id: int, token: str = Depends(oauth2_scheme),
                      session: AsyncSession = Depends(get_session)) -> TagRead:
