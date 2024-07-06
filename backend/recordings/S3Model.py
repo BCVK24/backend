@@ -34,3 +34,13 @@ class S3Client:
 
     async def get_file(self, url: str):
         return open(url, 'rb').read()
+
+    async def delete_file(self, url: str):
+        os.remove(url)
+
+    async def put_file(self, FileData: bytes, url: str) -> str:
+        f = open(url, 'wb')
+        f.write(FileData)
+        f.close()
+
+        return url

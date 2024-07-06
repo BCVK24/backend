@@ -1,6 +1,3 @@
-import io
-
-import numpy as np
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,35 +9,7 @@ from ..users.auth import get_user_id, oauth2_scheme
 from .relschemas import ResultRel
 from .schemas import ResultRead
 
-import wave
-
 router = APIRouter(prefix='/result', tags=['result'])
-
-
-def average(data, kernel_size):
-    cumsum = np.cumsum(np.insert(data, 0, 0))
-    return (cumsum[kernel_size:] - cumsum[:-kernel_size]) / kernel_size
-
-
-def medfilt(data, kernel_size):
-    result = np.zeros(len(data))
-    for i in range(len(data)):
-        result[i] = np.median(data[max(i - kernel_size, 0): min(i + kernel_size, len(data))])
-    return result
-
-
-async def sound_filtration(file_url: str) -> bytes:
-    sound_data = await ClientS3.get_file(file_url)
-
-    with wave.open(io.BytesIO(sound_data)) as sound:
-        params = sound.getparams()
-        data = np.frombuffer(sound.readframes(params.nframes), dtype=np.int16)
-
-    result = average(medfilt(data, 3), 3)
-    result = np.pad(result, (0, len(data) - len(result)))
-    result = result.astype(np.int16)
-
-    return bytes(result)
 
 
 @router.delete('/{result_id}')
@@ -50,6 +19,7 @@ async def delete_result(resul_id: int, token: str = Depends(oauth2_scheme),
     user_id = await get_user_id(token)
 
     result = await session.scalar(Result.get_by_id(resul_id))
+    await ClientS3.delete_file(result.url)
 
     rec_result = ResultRel.model_validate(result, from_attributes=True)
 
@@ -104,7 +74,7 @@ async def create_result(recording_id: int, token: str = Depends(oauth2_scheme),
     if recording.creator_id != user_id:
         raise HTTPException(401)
 
-    byte = await sound_filtration(recording.url)
+    byte = await ClientS3.get_file(recording.url)
 
     for tag in recording.tags:
         pass
