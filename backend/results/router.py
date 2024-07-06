@@ -106,6 +106,9 @@ async def create_result(recording_id: int, token: str = Depends(oauth2_scheme),
 
     byte = await sound_filtration(recording.url)
 
+    for tag in recording.tags:
+        pass
+
     url = await ClientS3.push_file(byte, user_id)
 
     result = Result(source_id=recording.id, url=url)
