@@ -13,6 +13,10 @@ router = APIRouter(prefix='/tag', tags=['tag'])
 async def update_tag(tag: TagUpdate, token: str = Depends(oauth2_scheme),
                      session: AsyncSession = Depends(get_session)) -> TagRead:
     tag_db = await session.scalar(Tag.get_by_id(tag.id))
+
+    if not tag_db:
+        raise HTTPException(404)
+
     tag_db.start = tag.start
     tag_db.end = tag.end
 
