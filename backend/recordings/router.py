@@ -22,6 +22,24 @@ async def get_user_id(token: str) -> int:
     return 1
 
 
+@router.delete('/{recording_id}')
+async def delete_recording(recording_id: int, token: str = Depends(oauth2_scheme),
+                           session: AsyncSession = Depends(get_session)) -> RecordingRead:
+    user_id = await get_user_id(token)
+
+    get_rec = await session.scalar(Recording.get_by_id(recording_id))
+
+    if not get_rec:
+        raise HTTPException(404)
+
+    record_return = RecordingRead.model_validate(get_rec, from_attributes=True)
+
+    await session.delete(get_rec)
+    await session.commit()
+
+    return record_return
+
+
 @router.get('/{recording_id}')
 async def get_recording(recording_id: int, token: str = Depends(oauth2_scheme),
                         session: AsyncSession = Depends(get_session)) -> RecordingRel:

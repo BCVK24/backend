@@ -43,6 +43,26 @@ async def sound_filtration(file_url: str) -> bytes:
     return bytes(result)
 
 
+@router.delete('/{result_id}')
+async def delete_result(resul_id: int, token: str = Depends(oauth2_scheme),
+                        session: AsyncSession = Depends(get_session)):
+
+    user_id = await get_user_id(token)
+
+    result = await session.scalar(Result.get_by_id(resul_id))
+
+    rec_result = ResultRel.model_validate(result, from_attributes=True)
+
+    if not result:
+        raise HTTPException(404)
+
+    await session.delete(result)
+
+    await session.commit()
+
+    return rec_result
+
+
 @router.get('/{result_id}')
 async def get_result(result_id: int, token: str = Depends(oauth2_scheme),
                      session: AsyncSession = Depends(get_session)) -> ResultRel:
