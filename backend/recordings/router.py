@@ -38,11 +38,19 @@ async def sound_filtration(sound_data: bytes) -> bytes:
         params = sound.getparams()
         data = np.frombuffer(sound.readframes(params.nframes), dtype=np.int16)
 
-    result = average(medfilt(data, 3), 3)
-    result = np.pad(result, (0, len(data) - len(result)))
-    result = result.astype(np.int16)
+        result = average(medfilt(data, 3), 3)
+        result = np.pad(result, (0, len(data) - len(result)))
+        result = result.astype(np.int16)
 
-    return bytes(result)
+    ret = io.BytesIO()
+
+    with wave.open(ret, 'wb') as rt:
+        rt.setparams(params)
+        rt.writeframes(result.tobytes())
+
+    ret.seek(0)
+
+    return ret.read()
 
 
 @router.delete('/{recording_id}')
@@ -67,7 +75,7 @@ async def delete_recording(recording_id: int, token: str = Depends(oauth2_scheme
 
 @router.put('/')
 async def put_recording_name(recording_title: str, recording_id: int, token: str = Depends(oauth2_scheme),
-                        session: AsyncSession = Depends(get_session)) -> RecordingRead:
+                             session: AsyncSession = Depends(get_session)) -> RecordingRead:
     user_id = get_user_id(token)
 
     recording = await session.scalar(Recording.get_by_id(recording_id))

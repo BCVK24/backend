@@ -1,3 +1,7 @@
+import io
+import wave
+
+import numpy as np
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,8 +12,27 @@ from ..recordings.router import ClientS3
 from ..users.auth import get_user_id, oauth2_scheme
 from .relschemas import ResultRel
 from .schemas import ResultRead
+from ..tags.models import Tag
+
 
 router = APIRouter(prefix='/result', tags=['result'])
+
+
+async def cut_file(recording_bytes: bytes, tags: list[Tag]) -> bytes:
+    with wave.open(io.BytesIO(recording_bytes)) as sound:
+        params = sound.getparams()
+        audio = np.frombuffer(sound.readframes(params.nframes), dtype=np.int16)
+
+    for tag in tags:
+        np.delete(audio, np.r_[slice(int(tag.start * params.framerate), int(tag.end * params.framerate))])
+
+    ret = io.BytesIO()
+
+    with wave.open(ret, 'wb') as rt:
+        rt.setparams(params)
+        rt.writeframes(audio.tobytes())
+
+    return ret.read()
 
 
 @router.delete('/{result_id}')
@@ -76,8 +99,7 @@ async def create_result(recording_id: int, token: str = Depends(oauth2_scheme),
 
     byte = await ClientS3.get_file(recording.url)
 
-    for tag in recording.tags:
-        pass
+    byte = await cut_file(byte, recording.tags)
 
     url = await ClientS3.push_file(byte, user_id)
 
