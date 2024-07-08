@@ -13,5 +13,6 @@ class Result(Base, CRUD):
     source_id: Mapped[int] = mapped_column(ForeignKey('recordings.id', ondelete='CASCADE'))
     url: Mapped[str]
     created_at: Mapped[dtnow]
+    duration: Mapped[int]
 
     source: Mapped['Recording'] = relationship(back_populates='results', lazy='joined')

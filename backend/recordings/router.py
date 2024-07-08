@@ -16,6 +16,10 @@ from .schemas import RecordingRead, RecordingCreate
 import io
 import numpy as np
 
+from datetime import datetime
+
+import os
+
 
 router = APIRouter(prefix='/recording', tags=['recording'])
 ClientS3 = S3Client("...", "...", "...", "...")
@@ -51,6 +55,26 @@ async def sound_filtration(sound_data: bytes) -> bytes:
     ret.seek(0)
 
     return ret.read()
+
+
+
+@router.get('/GetRoad/{recording_id}')
+async def get_road(recording_id: int, token: str = Depends(oauth2_scheme),
+                   session: AsyncSession = Depends(get_session)):
+
+    user_id = await get_user_id(token)
+
+    recording = await session.scalar(Recording.get_by_id(recording_id))
+
+    file_pos = f'waveform_local/{user_id}{datetime.now()}'
+
+    with open(f"{file_pos}.wav", 'wb') as loc_file:
+        loc_file.write(await ClientS3.get_file(recording.url))
+
+    os.system(f"RUN awf -i {file_pos}.wav -o {file_pos}.json")
+
+    return 0
+
 
 
 @router.delete('/{recording_id}')
@@ -126,9 +150,14 @@ async def upload_recording(recording: str = Form(), recording_file: UploadFile =
                            token: str = Depends(oauth2_scheme), session: AsyncSession = Depends(get_session)):
     user_id = await get_user_id(token)
 
-    url = await ClientS3.push_file(await sound_filtration(await recording_file.read()), user_id)
+    byte = await sound_filtration(await recording_file.read())
 
-    recording_db = Recording(url=url, creator_id=user_id, title=recording)
+    with wave.open(io.BytesIO(byte), 'rb') as dur:
+        duration = int(dur.getnframes() / float(dur.getframerate()))
+
+    url = await ClientS3.push_file(byte, user_id)
+
+    recording_db = Recording(url=url, creator_id=user_id, title=recording, duration=duration)
 
     session.add(recording_db)
 

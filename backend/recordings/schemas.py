@@ -11,6 +11,7 @@ class RecordingRead(RecordingBase):
     created_at: dt.datetime
     creator_id: int
     title: str
+    duration: int
 
 
 class RecordingCreate(RecordingBase):

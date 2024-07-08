@@ -9,6 +9,7 @@ class ResultBase(BaseModel):
 class ResultRead(ResultBase):
     id: int
     created_at: dt.datetime
+    duration: int
 
 
 class ResultCreate(ResultBase):

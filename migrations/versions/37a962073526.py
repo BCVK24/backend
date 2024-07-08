@@ -4,7 +4,7 @@ Revision ID: 37a962073526
 Revises: 985073519dde
 Create Date: 2024-07-05 12:09:50.082196
 
-Cum shot in my ass"""
+"""
 from typing import Sequence, Union
 
 from alembic import op

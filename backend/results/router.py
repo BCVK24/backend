@@ -24,13 +24,15 @@ async def cut_file(recording_bytes: bytes, tags: list[Tag]) -> bytes:
         audio = np.frombuffer(sound.readframes(params.nframes), dtype=np.int16)
 
     for tag in tags:
-        np.delete(audio, np.r_[slice(int(tag.start * params.framerate), int(tag.end * params.framerate))])
+        np.delete(audio, np.r_[slice(int(tag.start * (params.framerate // 1000)), int(tag.end * (params.framerate // 1000)))])
 
     ret = io.BytesIO()
 
     with wave.open(ret, 'wb') as rt:
         rt.setparams(params)
         rt.writeframes(audio.tobytes())
+
+    ret.seek(0)
 
     return ret.read()
 
@@ -101,9 +103,12 @@ async def create_result(recording_id: int, token: str = Depends(oauth2_scheme),
 
     byte = await cut_file(byte, recording.tags)
 
+    with wave.open(io.BytesIO(byte), 'rb') as dur:
+        duration = int(dur.getnframes() / float(dur.getframerate()))
+
     url = await ClientS3.push_file(byte, user_id)
 
-    result = Result(source_id=recording.id, url=url)
+    result = Result(source_id=recording.id, url=url, duration=duration)
 
     session.add(result)
 
