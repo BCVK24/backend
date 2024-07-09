@@ -1,4 +1,4 @@
-"""Init revision
+"""Mnogo spermi vo rtu
 
 Revision ID: 985073519dde
 Revises: 
