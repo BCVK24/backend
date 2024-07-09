@@ -14,6 +14,8 @@ from .relschemas import ResultRel
 from .schemas import ResultRead
 from ..tags.models import Tag
 
+from ..recordings.router import average
+
 
 router = APIRouter(prefix='/result', tags=['result'])
 
@@ -37,13 +39,47 @@ async def cut_file(recording_bytes: bytes, tags: list[Tag]) -> bytes:
     return ret.read()
 
 
+@router.get('/GetRoad/{result_id}')
+async def get_road(result_id: int, token: str = Depends(oauth2_scheme),
+                   session: AsyncSession = Depends(get_session)):
+    user_id = await get_user_id(token)
+
+    result = await session.scalar(Result.get_by_id(result_id))
+
+    wav_file = wave.open(io.BytesIO(await ClientS3.get_file(result.url)), 'rb')
+
+    Js = {
+        'version': 2,
+        'channels': wav_file.getnchannels(),
+        'sample_rate': wav_file.getframerate(),
+        'samples_per_pixel': 128,
+    }
+
+    signal = wav_file.readframes(-1)
+    if wav_file.getsampwidth() == 1:
+        signal = np.array(np.frombuffer(signal, dtype='UInt8') - 128, dtype=np.int8)
+        Js['bits'] = 8
+        Js['length'] = 1
+    elif wav_file.getsampwidth() == 2:
+        signal = np.frombuffer(signal, dtype=np.int16)
+        Js['bits'] = 16
+        Js['length'] = 2
+
+    deinterleaved = [signal[idx::wav_file.getnchannels()] for idx in range(wav_file.getnchannels())]
+
+    Js['length'] = int(len(deinterleaved[0]) / Js['length'] / (Js['samples_per_pixel'] // 2))
+    Js['data'] = list(average(deinterleaved[0], Js['samples_per_pixel']))[::Js['samples_per_pixel'] // 2]
+
+    return Js
+
+
 @router.delete('/{result_id}')
-async def delete_result(resul_id: int, token: str = Depends(oauth2_scheme),
+async def delete_result(result_id: int, token: str = Depends(oauth2_scheme),
                         session: AsyncSession = Depends(get_session)):
 
     user_id = await get_user_id(token)
 
-    result = await session.scalar(Result.get_by_id(resul_id))
+    result = await session.scalar(Result.get_by_id(result_id))
     await ClientS3.delete_file(result.url)
 
     rec_result = ResultRel.model_validate(result, from_attributes=True)

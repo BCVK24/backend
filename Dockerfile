@@ -4,7 +4,6 @@ WORKDIR /app
 COPY . .
 
 RUN mkdir local_save
-RUN mkdir waveform_local
 
 RUN pip install -r requirements.txt
 

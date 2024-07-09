@@ -16,10 +16,6 @@ from .schemas import RecordingRead, RecordingCreate
 import io
 import numpy as np
 
-from datetime import datetime
-
-import os
-
 
 router = APIRouter(prefix='/recording', tags=['recording'])
 ClientS3 = S3Client("...", "...", "...", "...")
@@ -57,7 +53,6 @@ async def sound_filtration(sound_data: bytes) -> bytes:
     return ret.read()
 
 
-
 @router.get('/GetRoad/{recording_id}')
 async def get_road(recording_id: int, token: str = Depends(oauth2_scheme),
                    session: AsyncSession = Depends(get_session)):
@@ -66,15 +61,31 @@ async def get_road(recording_id: int, token: str = Depends(oauth2_scheme),
 
     recording = await session.scalar(Recording.get_by_id(recording_id))
 
-    file_pos = f'waveform_local/{user_id}{datetime.now()}'
+    wav_file = wave.open(io.BytesIO(await ClientS3.get_file(recording.url)), 'rb')
 
-    with open(f"{file_pos}.wav", 'wb') as loc_file:
-        loc_file.write(await ClientS3.get_file(recording.url))
+    Js = {
+        'version': 2,
+        'channels': wav_file.getnchannels(),
+        'sample_rate': wav_file.getframerate(),
+        'samples_per_pixel': 128,
+    }
 
-    os.system(f"RUN awf -i {file_pos}.wav -o {file_pos}.json")
+    signal = wav_file.readframes(-1)
+    if wav_file.getsampwidth() == 1:
+        signal = np.array(np.frombuffer(signal, dtype='UInt8') - 128, dtype=np.int8)
+        Js['bits'] = 8
+        Js['length'] = 1
+    elif wav_file.getsampwidth() == 2:
+        signal = np.frombuffer(signal, dtype=np.int16)
+        Js['bits'] = 16
+        Js['length'] = 2
 
-    return 0
+    deinterleaved = [signal[idx::wav_file.getnchannels()] for idx in range(wav_file.getnchannels())]
 
+    Js['length'] = int(len(deinterleaved[0]) / Js['length'] / (Js['samples_per_pixel'] // 2))
+    Js['data'] = list(average(deinterleaved[0], Js['samples_per_pixel']))[::Js['samples_per_pixel'] // 2]
+
+    return Js
 
 
 @router.delete('/{recording_id}')
