@@ -27,11 +27,9 @@ async def create_user(session: AsyncSession = Depends(get_session)) -> UserRead:
 async def get_user(token: str = Depends(oauth2_scheme), session: AsyncSession = Depends(get_session)) -> UserRel:
     user_id = await get_user_id(token)
 
-    query = User.get_by_id(user_id)
+    user = await session.scalar(User.get_by_id(user_id))
 
-    user = await session.scalar(query)
-
-    if user is None:
+    if not user:
         raise HTTPException(404)
 
     return UserRel.model_validate(user, from_attributes=True)

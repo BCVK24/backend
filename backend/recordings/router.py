@@ -7,11 +7,10 @@ from sqlalchemy.exc import IntegrityError
 
 from ..db.dependencies import get_session
 from ..users.auth import get_user_id, oauth2_scheme
-from ..users.models import User
 from .models import Recording
 from .relschemas import RecordingRel
 from .S3Model import S3Client
-from .schemas import RecordingRead, RecordingCreate
+from .schemas import RecordingRead
 
 import io
 import numpy as np
@@ -79,6 +78,8 @@ async def get_road(recording_data: bytes):
     Js['length'] = int(len(deinterleaved[0]) / Js['length'] / (Js['samples_per_pixel'] // 2))
     Js['data'] = average(deinterleaved[0], Js['samples_per_pixel']).tolist()[::Js['samples_per_pixel'] // 2]
 
+    wav_file.close()
+
     return Js
 
 
@@ -91,6 +92,9 @@ async def delete_recording(recording_id: int, token: str = Depends(oauth2_scheme
 
     if not get_rec:
         raise HTTPException(404)
+
+    if get_rec.creator_id != user_id:
+        raise HTTPException(401)
 
     await ClientS3.delete_file(get_rec.url)
 
@@ -111,6 +115,9 @@ async def put_recording_name(recording_title: str, recording_id: int, token: str
 
     if not recording:
         raise HTTPException(404)
+
+    if recording.creator_id != user_id:
+        raise HTTPException(401)
 
     recording.title = recording_title
 

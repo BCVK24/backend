@@ -65,6 +65,8 @@ async def get_road(result_data: bytes):
     Js['length'] = int(len(deinterleaved[0]) / Js['length'] / (Js['samples_per_pixel'] // 2))
     Js['data'] = average(deinterleaved[0], Js['samples_per_pixel']).tolist()[::Js['samples_per_pixel'] // 2]
 
+    wav_file.close()
+
     return Js
 
 
@@ -75,12 +77,13 @@ async def delete_result(result_id: int, token: str = Depends(oauth2_scheme),
     user_id = await get_user_id(token)
 
     result = await session.scalar(Result.get_by_id(result_id))
-    await ClientS3.delete_file(result.url)
-
-    rec_result = ResultRel.model_validate(result, from_attributes=True)
 
     if not result:
         raise HTTPException(404)
+
+    await ClientS3.delete_file(result.url)
+
+    rec_result = ResultRel.model_validate(result, from_attributes=True)
 
     await session.delete(result)
 
@@ -130,9 +133,7 @@ async def create_result(recording_id: int, token: str = Depends(oauth2_scheme),
     if recording.creator_id != user_id:
         raise HTTPException(401)
 
-    byte = await ClientS3.get_file(recording.url)
-
-    byte = await cut_file(byte, recording.tags)
+    byte = await cut_file(await ClientS3.get_file(recording.url), recording.tags)
 
     with wave.open(io.BytesIO(byte), 'rb') as dur:
         duration = int(dur.getnframes() / float(dur.getframerate()))

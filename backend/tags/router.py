@@ -49,6 +49,9 @@ async def create_tag(tag: TagCreate, token: str = Depends(oauth2_scheme),
 
     tag_get = Tag(**tag.model_dump())
 
+    if not tag_get:
+        raise HTTPException(404)
+
     session.add(tag_get)
 
     await session.commit()
