@@ -53,15 +53,9 @@ async def sound_filtration(sound_data: bytes) -> bytes:
     return ret.read()
 
 
-@router.get('/GetRoad/{recording_id}')
-async def get_road(recording_id: int, token: str = Depends(oauth2_scheme),
-                   session: AsyncSession = Depends(get_session)):
+async def get_road(recording_data: bytes):
 
-    user_id = await get_user_id(token)
-
-    recording = await session.scalar(Recording.get_by_id(recording_id))
-
-    wav_file = wave.open(io.BytesIO(await ClientS3.get_file(recording.url)), 'rb')
+    wav_file = wave.open(io.BytesIO(recording_data), 'rb')
 
     Js = {
         'version': 2,
@@ -83,7 +77,7 @@ async def get_road(recording_id: int, token: str = Depends(oauth2_scheme),
     deinterleaved = [signal[idx::wav_file.getnchannels()] for idx in range(wav_file.getnchannels())]
 
     Js['length'] = int(len(deinterleaved[0]) / Js['length'] / (Js['samples_per_pixel'] // 2))
-    Js['data'] = list(average(deinterleaved[0], Js['samples_per_pixel']))[::Js['samples_per_pixel'] // 2]
+    Js['data'] = average(deinterleaved[0], Js['samples_per_pixel']).tolist()[::Js['samples_per_pixel'] // 2]
 
     return Js
 
@@ -168,7 +162,9 @@ async def upload_recording(recording: str = Form(), recording_file: UploadFile =
 
     url = await ClientS3.push_file(byte, user_id)
 
-    recording_db = Recording(url=url, creator_id=user_id, title=recording, duration=duration)
+    soundwave = str(await get_road(byte))
+
+    recording_db = Recording(url=url, creator_id=user_id, title=recording, duration=duration, soundwave=soundwave)
 
     session.add(recording_db)
 

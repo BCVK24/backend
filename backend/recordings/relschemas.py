@@ -8,3 +8,4 @@ class RecordingRel(RecordingRead):
     creator: UserRead
     tags: list[TagRead]
     results: list[ResultRead]
+    soundwave: str
