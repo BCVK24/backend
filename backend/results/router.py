@@ -9,10 +9,11 @@ from .models import Result
 from ..db.dependencies import get_session
 from ..recordings.models import Recording
 from ..recordings.router import ClientS3
-from ..users.auth import get_user_id, oauth2_scheme
+from ..users.auth import get_current_user
 from .relschemas import ResultRel
 from .schemas import ResultRead
 from ..tags.models import Tag
+from ..users.models import User
 
 from ..recordings.router import average
 
@@ -71,11 +72,8 @@ async def get_road(result_data: bytes):
 
 
 @router.delete('/{result_id}')
-async def delete_result(result_id: int, token: str = Depends(oauth2_scheme),
+async def delete_result(result_id: int, user: User = Depends(get_current_user),
                         session: AsyncSession = Depends(get_session)):
-
-    user_id = await get_user_id(token)
-
     result = await session.scalar(Result.get_by_id(result_id))
 
     if not result:
@@ -93,11 +91,8 @@ async def delete_result(result_id: int, token: str = Depends(oauth2_scheme),
 
 
 @router.get('/{result_id}')
-async def get_result(result_id: int, token: str = Depends(oauth2_scheme),
+async def get_result(result_id: int, user: User = Depends(get_current_user),
                      session: AsyncSession = Depends(get_session)) -> ResultRel:
-
-    user_id = await get_user_id(token)
-
     query = Result.get_by_id(result_id)
     result = await session.scalar(query)
 
@@ -108,10 +103,8 @@ async def get_result(result_id: int, token: str = Depends(oauth2_scheme),
 
 
 @router.get('/download/{result_id}')
-async def get_result_data(result_id: int, token: str = Depends(oauth2_scheme),
+async def get_result_data(result_id: int, user: User = Depends(get_current_user),
                           session: AsyncSession = Depends(get_session)):
-    user_id = await get_user_id(token)
-
     result = await session.scalar(Result.get_by_id(result_id))
 
     if not result:
@@ -121,16 +114,14 @@ async def get_result_data(result_id: int, token: str = Depends(oauth2_scheme),
 
 
 @router.post('/{recording_id}')
-async def create_result(recording_id: int, token: str = Depends(oauth2_scheme),
+async def create_result(recording_id: int, user: User = Depends(get_current_user),
                         session: AsyncSession = Depends(get_session)):
-    user_id = await get_user_id(token)
-
     recording = await session.scalar(Recording.get_by_id(recording_id))
 
     if recording is None:
         raise HTTPException(404)
 
-    if recording.creator_id != user_id:
+    if recording.creator_id != user.id:
         raise HTTPException(401)
 
     byte = await cut_file(await ClientS3.get_file(recording.url), recording.tags)
@@ -138,7 +129,7 @@ async def create_result(recording_id: int, token: str = Depends(oauth2_scheme),
     with wave.open(io.BytesIO(byte), 'rb') as dur:
         duration = int(dur.getnframes() / float(dur.getframerate()))
 
-    url = await ClientS3.push_file(byte, user_id)
+    url = await ClientS3.push_file(byte, user.id)
 
     soundwave = str(await get_road(byte))
 

@@ -4,13 +4,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .models import Tag
 from .schemas import TagRead, TagUpdate, TagCreate
 from ..db.dependencies import get_session
-from ..users.auth import get_user_id, oauth2_scheme
+
+from ..users.models import User
+from ..users.auth import get_current_user
 
 router = APIRouter(prefix='/tag', tags=['tag'])
 
 
 @router.put('/')
-async def update_tag(tag: TagUpdate, token: str = Depends(oauth2_scheme),
+async def update_tag(tag: TagUpdate, user: User = Depends(get_current_user),
                      session: AsyncSession = Depends(get_session)) -> TagRead:
     tag_db = await session.scalar(Tag.get_by_id(tag.id))
 
@@ -26,7 +28,7 @@ async def update_tag(tag: TagUpdate, token: str = Depends(oauth2_scheme),
 
 
 @router.delete('/{tag_id}')
-async def delete_tag(tag_id: int, token: str = Depends(oauth2_scheme),
+async def delete_tag(tag_id: int, user: User = Depends(get_current_user),
                      session: AsyncSession = Depends(get_session)) -> TagRead:
     tag_get = await session.scalar(Tag.get_by_id(tag_id))
 
@@ -43,10 +45,7 @@ async def delete_tag(tag_id: int, token: str = Depends(oauth2_scheme),
 
 
 @router.post('/')
-async def create_tag(tag: TagCreate, token: str = Depends(oauth2_scheme),
-                     session: AsyncSession = Depends(get_session)):
-    user_id = get_user_id(token)
-
+async def create_tag(tag: TagCreate, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
     tag_get = Tag(**tag.model_dump())
 
     if not tag_get:

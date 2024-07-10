@@ -1,38 +1,41 @@
-from datetime import timedelta
+import base64
 
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Header, Depends, Security
+from fastapi.security import APIKeyHeader
 
+from sqlalchemy.ext.asyncio import AsyncSession
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
+from .models import User
 
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="user/auth/token")
+from ..db.dependencies import get_session
 
 router = APIRouter(prefix='/auth', tags=['auth'])
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
-    return '123'
+api_key_header = APIKeyHeader(name='Authorization')
 
 
-async def get_user_id(token: str) -> int:
+async def get_current_user(token: str = Security(api_key_header), session: AsyncSession = Depends(get_session)) -> User:
+    decode = str(base64.b64decode(token.strip("VK ")))
+
+    args = dict()
+
+    for i in decode.split('&'):
+        gay_porno_1488 = i.split('=')
+        args[gay_porno_1488[0]] = gay_porno_1488[1]
+
     token_valid = True
 
     if not token_valid:
-        raise HTTPException(401)
-    return 1
+        raise HTTPException(1488)
 
+    user_id = str(args['vk_user_id'])
 
-@router.post("/token")
-async def login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-) -> Token:
-    access_token_expires = timedelta(minutes=300)
-    access_token = create_access_token(
-        data={}, expires_delta=access_token_expires
-    )
-    return Token(access_token=access_token, token_type="bearer")
+    user = await session.scalar(User.get_by_vk_id(str(user_id)))
+
+    if not user:
+        user = User(vk_id=user_id)
+        session.add(user)
+        await session.commit()
+
+    return user

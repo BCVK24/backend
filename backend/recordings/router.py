@@ -1,16 +1,18 @@
 import wave
 
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Form
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Form, Header
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 
 from ..db.dependencies import get_session
-from ..users.auth import get_user_id, oauth2_scheme
+from ..users.auth import get_current_user
 from .models import Recording
 from .relschemas import RecordingRel
 from .S3Model import S3Client
 from .schemas import RecordingRead
+from ..users.models import User
+
 
 import io
 import numpy as np
@@ -84,16 +86,14 @@ async def get_road(recording_data: bytes):
 
 
 @router.delete('/{recording_id}')
-async def delete_recording(recording_id: int, token: str = Depends(oauth2_scheme),
+async def delete_recording(recording_id: int, user: User = Depends(get_current_user),
                            session: AsyncSession = Depends(get_session)) -> RecordingRead:
-    user_id = await get_user_id(token)
-
     get_rec = await session.scalar(Recording.get_by_id(recording_id))
 
     if not get_rec:
         raise HTTPException(404)
 
-    if get_rec.creator_id != user_id:
+    if get_rec.creator_id != user.id:
         raise HTTPException(401)
 
     await ClientS3.delete_file(get_rec.url)
@@ -107,16 +107,14 @@ async def delete_recording(recording_id: int, token: str = Depends(oauth2_scheme
 
 
 @router.put('/')
-async def put_recording_name(recording_title: str, recording_id: int, token: str = Depends(oauth2_scheme),
+async def put_recording_name(recording_title: str, recording_id: int, user: User = Depends(get_current_user),
                              session: AsyncSession = Depends(get_session)) -> RecordingRead:
-    user_id = get_user_id(token)
-
     recording = await session.scalar(Recording.get_by_id(recording_id))
 
     if not recording:
         raise HTTPException(404)
 
-    if recording.creator_id != user_id:
+    if recording.creator_id != user.id:
         raise HTTPException(401)
 
     recording.title = recording_title
@@ -127,51 +125,47 @@ async def put_recording_name(recording_title: str, recording_id: int, token: str
 
 
 @router.get('/{recording_id}')
-async def get_recording(recording_id: int, token: str = Depends(oauth2_scheme),
+async def get_recording(recording_id: int, user: User = Depends(get_current_user),
                         session: AsyncSession = Depends(get_session)) -> RecordingRel:
-    user_id = await get_user_id(token)
-
     recording = await session.scalar(Recording.get_by_id(recording_id))
 
     if not recording:
         raise HTTPException(404)
 
-    if recording.creator_id != user_id:
+    if recording.creator_id != user.id:
         raise HTTPException(401)
 
     return RecordingRel.model_validate(recording, from_attributes=True)
 
 
 @router.get('/download/{file_id}')
-async def get_recording_data(file_id: int, token: str = Depends(oauth2_scheme), session: AsyncSession = Depends(get_session)):
-    user_id = await get_user_id(token)
-
+async def get_recording_data(file_id: int, user: User = Depends(get_current_user),
+                             session: AsyncSession = Depends(get_session)):
     recording = await (session.scalar(Recording.get_by_id(file_id)))
 
     if not recording:
         raise HTTPException(404)
 
-    if recording.creator_id != user_id:
+    if recording.creator_id != user.id:
         raise HTTPException(401)
 
     return {'recording': str(await ClientS3.get_file(recording.url))}
 
 
 @router.post('/')
-async def upload_recording(recording: str = Form(), recording_file: UploadFile = File(),
-                           token: str = Depends(oauth2_scheme), session: AsyncSession = Depends(get_session)):
-    user_id = await get_user_id(token)
+async def upload_recording(user: User = Depends(get_current_user), recording: str = Form(),
+                           recording_file: UploadFile = File(), session: AsyncSession = Depends(get_session)):
 
     byte = await sound_filtration(await recording_file.read())
 
     with wave.open(io.BytesIO(byte), 'rb') as dur:
         duration = int(dur.getnframes() / float(dur.getframerate()))
 
-    url = await ClientS3.push_file(byte, user_id)
+    url = await ClientS3.push_file(byte, user.id)
 
     soundwave = str(await get_road(byte))
 
-    recording_db = Recording(url=url, creator_id=user_id, title=recording, duration=duration, soundwave=soundwave)
+    recording_db = Recording(url=url, creator_id=user.id, title=recording, duration=duration, soundwave=soundwave)
 
     session.add(recording_db)
 
