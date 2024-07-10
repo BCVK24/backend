@@ -1,6 +1,6 @@
 import base64
 
-from fastapi import APIRouter, HTTPException, Header, Depends, Security
+from fastapi import HTTPException, Depends, Security
 from fastapi.security import APIKeyHeader
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,8 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .models import User
 
 from ..db.dependencies import get_session
-
-router = APIRouter(prefix='/auth', tags=['auth'])
 
 
 api_key_header = APIKeyHeader(name='Authorization')
@@ -37,5 +35,7 @@ async def get_current_user(token: str = Security(api_key_header), session: Async
         user = User(vk_id=user_id)
         session.add(user)
         await session.commit()
+
+        user = await session.scalar(User.get_by_vk_id(str(user_id)))
 
     return user
