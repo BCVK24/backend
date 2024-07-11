@@ -39,7 +39,7 @@ async def sound_filtration(sound_data: bytes) -> bytes:
         params = sound.getparams()
         data = np.frombuffer(sound.readframes(params.nframes), dtype=np.int16)
 
-        result = average(medfilt(data, 3), 3)
+        result = medfilt(data, 3)
         result = np.pad(result, (0, len(data) - len(result)))
         result = result.astype(np.int16)
 
