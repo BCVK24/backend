@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     DB_PASS: str
     DB_NAME: str
     CLIENT_SECRET: str
+    HOST_ID: str
 
     @property
     def DATABASE_URL(self):
