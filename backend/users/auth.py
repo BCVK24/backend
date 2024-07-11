@@ -31,13 +31,11 @@ async def get_current_user(token: str = Security(api_key_header), session: Async
 
     sign_args = '&'.join([f'{i}={args[i]}' for i in args.keys() if i.startswith('vk_')])
 
-    hashed = hmac.new(settings.CLIENT_SECRET.encode(), sign_args.encode(), hashlib.sha256).digest()
+    hashed = base64.b64encode(
+        hmac.new(settings.CLIENT_SECRET.encode(), sign_args.encode(), hashlib.sha256).digest()
+    ).decode().replace('+', '-').replace('/', '_').replace('=', '')
 
-    hashed = base64.b64encode(hashed).decode()
-
-    print(sign_args, decode)
-
-    if hashed.replace('+', '-').replace('/', '_').replace('=', '') != args['sign']:
+    if hashed != args['sign']:
         raise HTTPException(401)
 
     user_id = str(args['vk_user_id'])
