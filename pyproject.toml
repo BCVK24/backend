@@ -18,6 +18,8 @@ aiobotocore = "^2.13.1"
 numpy = "^2.0.0"
 python-ffmpeg = "^2.0.12"
 #celery = "^5.4.0"
+celery = "^5.4.0"
+redis = "^5.0.7"
 
 
 [build-system]
