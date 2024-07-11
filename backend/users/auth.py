@@ -1,4 +1,6 @@
 import base64
+import hashlib
+import hmac
 
 from fastapi import HTTPException, Depends, Security
 from fastapi.security import APIKeyHeader
@@ -9,23 +11,34 @@ from .models import User
 
 from ..db.dependencies import get_session
 
+from ..config import settings
+
 
 api_key_header = APIKeyHeader(name='Authorization')
 
 
 async def get_current_user(token: str = Security(api_key_header), session: AsyncSession = Depends(get_session)) -> User:
-    decode = str(base64.b64decode(token.strip("VK ")))
+    if not token:
+        raise HTTPException(401)
+
+    decode = base64.b64decode(token.strip("VK")).decode().replace("'", '').strip("?")
 
     args = dict()
 
     for i in decode.split('&'):
-        gay_porno_1488 = i.split('=')
-        args[gay_porno_1488[0]] = gay_porno_1488[1]
+        data = i.split('=')
+        args[data[0]] = data[1]
 
-    token_valid = True
+    sign_args = '&'.join([f'{i}={args[i]}' for i in args.keys() if i.startswith('vk_')])
 
-    if not token_valid:
-        raise HTTPException(1488)
+    hashed = hmac.new(settings.CLIENT_SECRET.encode(), sign_args.encode(), hashlib.sha256).digest()
+
+    hashed = base64.b64encode(hashed).decode()
+
+    print(sign_args, decode)
+
+    if hashed.replace('+', '-').replace('/', '_').replace('=', '') != args['sign']:
+        raise HTTPException(401)
 
     user_id = str(args['vk_user_id'])
 
