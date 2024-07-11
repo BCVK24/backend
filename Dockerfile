@@ -5,6 +5,9 @@ COPY . .
 
 RUN mkdir local_save
 
+RUN mkdir logs
+RUN touch logs/error.log
+
 RUN pip install -r requirements.txt
 
 CMD ["python3", "main.py"]

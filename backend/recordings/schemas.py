@@ -12,6 +12,7 @@ class RecordingRead(RecordingBase):
     creator_id: int
     title: str
     duration: int
+    url: str
 
 
 class RecordingCreate(RecordingBase):

@@ -10,6 +10,7 @@ class ResultRead(ResultBase):
     id: int
     created_at: dt.datetime
     duration: int
+    url: str
 
 
 class ResultCreate(ResultBase):

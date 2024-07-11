@@ -13,7 +13,6 @@ from .S3Model import S3Client
 from .schemas import RecordingRead
 from ..users.models import User
 
-
 import io
 import numpy as np
 
