@@ -21,7 +21,7 @@ async def get_current_user(token: str = Security(api_key_header), session: Async
     if not token:
         raise HTTPException(401)
 
-    decode = base64.b64decode(token.strip("VK ")).decode().replace("'", '').strip("?")
+    decode = base64.b64decode(token.strip("VK ") + "===").decode().replace("'", '').strip("?")
 
     args = dict()
 

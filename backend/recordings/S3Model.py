@@ -26,7 +26,7 @@ class S3Client:
 
         url = f'{UserId}{datetime.now()}.wav'
 
-        f = open(url, 'wb')
+        f = open(f'local_save/{url}', 'wb')
         f.write(FileData)
         f.close()
 
