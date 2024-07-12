@@ -1,4 +1,4 @@
-"""porno 1488
+"""add title to recordings
 
 Revision ID: 37a962073526
 Revises: 985073519dde

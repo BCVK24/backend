@@ -1,4 +1,4 @@
-"""hochy chlen v moy anal
+"""Add duration for recordings and results
 
 Revision ID: d4652134d504
 Revises: 37a962073526
