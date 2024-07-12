@@ -12,7 +12,7 @@ class RecordingRead(RecordingBase):
     creator_id: int
     title: str
     duration: int
-    url: str
+    processing: bool
 
 
 class RecordingCreate(RecordingBase):

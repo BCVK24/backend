@@ -150,7 +150,8 @@ async def upload_recording(user: User = Depends(get_current_user), recording: st
 
     soundwave = str(await get_road(byte))
 
-    recording_db = Recording(url=url, creator_id=user.id, title=recording, duration=duration, soundwave=soundwave)
+    recording_db = Recording(url=url, creator_id=user.id, title=recording, duration=duration, soundwave=soundwave,
+                             processing=True)
 
     session.add(recording_db)
 

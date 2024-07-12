@@ -15,6 +15,7 @@ class Recording(Base, CRUD):
     created_at: Mapped[dtnow]
     duration: Mapped[int]
     soundwave: Mapped[str]
+    processing: Mapped[bool]
 
     creator: Mapped['User'] = relationship(back_populates='recordings', lazy='joined')
     tags: Mapped[list['Tag']] = relationship(back_populates='recording', lazy='selectin')
