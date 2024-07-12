@@ -1,4 +1,4 @@
-"""add title to recordings
+"""Add title for recording
 
 Revision ID: 37a962073526
 Revises: 985073519dde

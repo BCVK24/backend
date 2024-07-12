@@ -1,4 +1,4 @@
-"""Daite negra v moy anal
+"""Add processing flag
 
 Revision ID: c395557cebfa
 Revises: 7176a2d6f3a9

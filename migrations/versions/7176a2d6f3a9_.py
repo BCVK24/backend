@@ -1,4 +1,4 @@
-"""add vk id for users
+"""Add vk id for user
 
 Revision ID: 7176a2d6f3a9
 Revises: 4f6d27612391

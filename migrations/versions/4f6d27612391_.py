@@ -1,4 +1,4 @@
-"""Add calculated soundwave
+"""Add calculated soundwave for recording
 
 Revision ID: 4f6d27612391
 Revises: d4652134d504
