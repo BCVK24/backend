@@ -102,17 +102,6 @@ async def get_result(result_id: int, user: User = Depends(get_current_user),
     return ResultRel.model_validate(result, from_attributes=True)
 
 
-@router.get('/download/{result_id}')
-async def get_result_data(result_id: int, user: User = Depends(get_current_user),
-                          session: AsyncSession = Depends(get_session)):
-    result = await session.scalar(Result.get_by_id(result_id))
-
-    if not result:
-        raise HTTPException(404)
-
-    return {'result': str(await ClientS3.get_file(result.url))}
-
-
 @router.post('/{recording_id}')
 async def create_result(recording_id: int, user: User = Depends(get_current_user),
                         session: AsyncSession = Depends(get_session)):

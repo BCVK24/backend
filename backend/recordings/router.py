@@ -137,20 +137,6 @@ async def get_recording(recording_id: int, user: User = Depends(get_current_user
     return RecordingRel.model_validate(recording, from_attributes=True)
 
 
-@router.get('/download/{file_id}')
-async def get_recording_data(file_id: int, user: User = Depends(get_current_user),
-                             session: AsyncSession = Depends(get_session)):
-    recording = await (session.scalar(Recording.get_by_id(file_id)))
-
-    if not recording:
-        raise HTTPException(404)
-
-    if recording.creator_id != user.id:
-        raise HTTPException(401)
-
-    return {'recording': str(await ClientS3.get_file(recording.url))}
-
-
 @router.post('/')
 async def upload_recording(user: User = Depends(get_current_user), recording: str = Form(),
                            recording_file: UploadFile = File(), session: AsyncSession = Depends(get_session)):
