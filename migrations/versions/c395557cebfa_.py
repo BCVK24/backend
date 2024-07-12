@@ -1,4 +1,4 @@
-"""empty message
+"""Daite negra v moy anal
 
 Revision ID: c395557cebfa
 Revises: 7176a2d6f3a9

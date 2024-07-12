@@ -57,31 +57,17 @@ async def get_road(recording_data: bytes):
 
     wav_file = wave.open(io.BytesIO(recording_data), 'rb')
 
-    Js = {
-        'version': 2,
-        'channels': wav_file.getnchannels(),
-        'sample_rate': wav_file.getframerate(),
-        'samples_per_pixel': 128,
-    }
-
     signal = wav_file.readframes(-1)
     if wav_file.getsampwidth() == 1:
         signal = np.array(np.frombuffer(signal, dtype='UInt8') - 128, dtype=np.int8)
-        Js['bits'] = 8
-        Js['length'] = 1
     elif wav_file.getsampwidth() == 2:
         signal = np.frombuffer(signal, dtype=np.int16)
-        Js['bits'] = 16
-        Js['length'] = 2
 
     deinterleaved = [signal[idx::wav_file.getnchannels()] for idx in range(wav_file.getnchannels())]
 
-    Js['length'] = int(len(deinterleaved[0]) / Js['length'] / (Js['samples_per_pixel'] // 2))
-    Js['data'] = average(deinterleaved[0], Js['samples_per_pixel']).tolist()[::Js['samples_per_pixel'] // 2]
-
     wav_file.close()
 
-    return Js
+    return average(deinterleaved[0], 128).tolist()[::64]
 
 
 @router.delete('/{recording_id}')

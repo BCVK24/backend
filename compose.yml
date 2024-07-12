@@ -23,7 +23,7 @@ services:
     build: .
 
   redis:
-    image: redis:7
+    image: redis:latest
 
   nginx:
     build: .
