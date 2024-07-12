@@ -26,7 +26,6 @@ services:
     image: redis:latest
 
   nginx:
-    build: .
     image: nginx:latest
     ports:
       - 8888:8888
