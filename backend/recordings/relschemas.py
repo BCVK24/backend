@@ -9,3 +9,4 @@ class RecordingRel(RecordingRead):
     tags: list[TagRead]
     results: list[ResultRead]
     soundwave: str
+    url: str

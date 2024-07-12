@@ -3,8 +3,6 @@ WORKDIR /app
 
 COPY . .
 
-RUN mkdir local_save
-
 RUN mkdir logs
 RUN touch logs/error.log
 
