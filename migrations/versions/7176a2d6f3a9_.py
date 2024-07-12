@@ -1,4 +1,4 @@
-"""ebut moy anal gluboko
+"""add vk id for users
 
 Revision ID: 7176a2d6f3a9
 Revises: 4f6d27612391

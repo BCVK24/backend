@@ -23,7 +23,6 @@ class S3Client:
             yield Client
 
     async def push_file(self, FileData: bytes, UserId: int) -> str:
-
         url = f'{UserId}{datetime.now()}.wav'
 
         f = open(f'local_save/{url}', 'wb')

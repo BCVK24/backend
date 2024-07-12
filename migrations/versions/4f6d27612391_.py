@@ -1,4 +1,4 @@
-"""porno s baranom
+"""Add calculated soundwave
 
 Revision ID: 4f6d27612391
 Revises: d4652134d504
