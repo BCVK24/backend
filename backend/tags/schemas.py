@@ -4,25 +4,20 @@ from .models import TagDescription
 
 
 class TagBase(BaseModel):
-    pass
+    start: float
+    end: float
+    class Config:
+        use_enum_values = True
 
 
 class TagRead(TagBase):
     id: int
     recording_id: int
-    start: int
-    end: int
     description: str
-
 
 class TagUpdate(TagBase):
     id: int
-    start: int
-    end: int
-
 
 class TagCreate(TagBase):
     recording_id: int
-    start: int
-    end: int
     description: TagDescription

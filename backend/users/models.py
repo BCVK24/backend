@@ -9,7 +9,7 @@ from ..db.annotations import intpk
 class User(Base, CRUD):
     __tablename__ = 'user'
     id: Mapped[intpk]
-    vk_id: Mapped[str]  # Hashed? 1488?
+    vk_id: Mapped[str]  # Hashed?
 
     recordings: Mapped[list['Recording']] = relationship(back_populates='creator', lazy='selectin')
 
