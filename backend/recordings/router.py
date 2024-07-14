@@ -1,6 +1,6 @@
 import wave
 
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Form, Header
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Form
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
