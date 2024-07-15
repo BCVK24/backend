@@ -18,6 +18,7 @@ from ..users.models import User
 from ..sound.sound import get_road
 
 
+
 router = APIRouter(prefix='/result', tags=['result'])
 
 
@@ -27,7 +28,8 @@ async def cut_file(recording_bytes: bytes, tags: list[Tag]) -> bytes:
         audio = np.frombuffer(sound.readframes(params.nframes), dtype=np.int16)
 
     for tag in tags:
-        np.delete(audio, np.r_[slice(int(tag.start * params.framerate), int(tag.end * params.framerate))])
+        audio = np.delete(audio, slice(int(tag.start * params.framerate * params.sampwidth),
+                                       int(tag.end * params.framerate * params.sampwidth)))
 
     ret = io.BytesIO()
 

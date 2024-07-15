@@ -15,6 +15,8 @@ from ..users.models import User
 
 from ..sound.sound import sound_filtration, get_road
 
+from ..celery.worker import get_tags
+
 import io
 
 
@@ -84,7 +86,7 @@ async def upload_recording(user: User = Depends(get_current_user), recording: st
     with wave.open(io.BytesIO(byte), 'rb') as dur:
         duration = int(dur.getnframes() / float(dur.getframerate()))
 
-    url = await ClientS3.push_file(bytes(0), user.id)
+    url = await ClientS3.push_file(byte, user.id)
 
     soundwave = str(await get_road(byte))
 

@@ -25,8 +25,6 @@ async def get_current_user(token: str = Security(api_key_header), session: Async
 
     args = dict()
 
-    print(decode)
-
     for i in decode.split('&'):
         data = i.split('=')
         args[data[0]] = data[1]
