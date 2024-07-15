@@ -1,12 +1,8 @@
 from celery import Celery
+import asyncio
 
 import os
 
 celery = Celery(__name__)
 celery.conf.broker_url = os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379")
 celery.conf.result_backend = os.environ.get("CELERY_RESULT_BACKEND", "redis://localhost:6379")
-
-@celery.task
-def sound_filtration(file_id):
-    print(file_id)
-    return True
