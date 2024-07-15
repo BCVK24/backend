@@ -10,7 +10,7 @@ from ..users.auth import get_current_user
 from .models import Recording
 from .relschemas import RecordingRel
 from .S3Model import S3Client
-from .schemas import RecordingRead
+from .schemas import RecordingRead, RecordingUpdate
 from ..users.models import User
 
 import io
@@ -92,21 +92,21 @@ async def delete_recording(recording_id: int, user: User = Depends(get_current_u
 
 
 @router.put('/')
-async def put_recording_name(recording_title: str, recording_id: int, user: User = Depends(get_current_user),
+async def put_recording_name(recording: RecordingUpdate, user: User = Depends(get_current_user),
                              session: AsyncSession = Depends(get_session)) -> RecordingRead:
-    recording = await session.scalar(Recording.get_by_id(recording_id))
+    recording_db = await session.scalar(Recording.get_by_id(recording.id))
 
-    if not recording:
+    if not recording_db:
         raise HTTPException(404)
 
-    if recording.creator_id != user.id:
+    if recording_db.creator_id != user.id:
         raise HTTPException(401)
 
-    recording.title = recording_title
+    recording_db.title = recording.title
 
     await session.commit()
 
-    return RecordingRead.model_validate(recording, from_attributes=True)
+    return RecordingRead.model_validate(recording_db, from_attributes=True)
 
 
 @router.get('/{recording_id}')
