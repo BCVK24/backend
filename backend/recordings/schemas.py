@@ -17,3 +17,7 @@ class RecordingRead(RecordingBase):
 
 class RecordingCreate(RecordingBase):
     title: str
+
+class RecordingUpdate(RecordingBase):
+    id: int
+    title: str
