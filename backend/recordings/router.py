@@ -100,6 +100,6 @@ async def upload_recording(user: User = Depends(get_current_user), recording: st
     except IntegrityError as err:
         raise HTTPException(401)
 
-    #get_tags.run(recording_db.id)
+    get_tags.run(recording_db.id)
 
     return RecordingRead.model_validate(recording_db, from_attributes=True)
