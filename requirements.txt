@@ -638,6 +638,9 @@ orjson==3.10.5 ; python_version >= "3.10" and python_version < "4.0" \
 prompt-toolkit==3.0.47 ; python_version >= "3.10" and python_version < "4.0" \
     --hash=sha256:0d7bfa67001d5e39d02c224b663abc33687405033a8c422d0d675a5a13361d10 \
     --hash=sha256:1e1b29cb58080b1e69f207c893a1a7bf16d127a5c30c9d17a25a5d77792e5360
+psycopg==3.2.1 ; python_version >= "3.10" and python_version < "4.0" \
+    --hash=sha256:dc8da6dc8729dacacda3cc2f17d2c9397a70a66cf0d2b69c91065d60d5f00cb7 \
+    --hash=sha256:ece385fb413a37db332f97c49208b36cf030ff02b199d7635ed2fbd378724175
 pydantic-core==2.20.0 ; python_version >= "3.10" and python_version < "4.0" \
     --hash=sha256:03aceaf6a5adaad3bec2233edc5a7905026553916615888e53154807e404545c \
     --hash=sha256:05e83ce2f7eba29e627dd8066aa6c4c0269b2d4f889c0eba157233a353053cea \

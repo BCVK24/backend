@@ -21,6 +21,7 @@ python-ffmpeg = "^2.0.12"
 celery = "^5.4.0"
 redis = "^5.0.7"
 scipy = "^1.14.0"
+psycopg = "^3.2.1"
 
 
 [build-system]
