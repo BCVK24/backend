@@ -17,11 +17,10 @@ asyncpg = "^0.29.0"
 aiobotocore = "^2.13.1"
 numpy = "^2.0.0"
 python-ffmpeg = "^2.0.12"
-#celery = "^5.4.0"
 celery = "^5.4.0"
 redis = "^5.0.7"
 scipy = "^1.14.0"
-psycopg = "^3.2.1"
+psycopg = {extras = ["binary", "pool"], version = "^3.2.1"}
 
 
 [build-system]
