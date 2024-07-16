@@ -14,9 +14,6 @@ celery.conf.broker_url = os.environ.get("CELERY_BROKER_URL", "redis://localhost:
 celery.conf.result_backend = os.environ.get("CELERY_RESULT_BACKEND", "redis://localhost:6379")
 
 
-
-
-
 @celery.task(name="get_tags")
 def get_tags(recording_id):
     with Session(sync_engine) as session:

@@ -86,6 +86,9 @@ async def create_result(recording_id: int, user: User = Depends(get_current_user
     if recording.creator_id != user.id:
         raise HTTPException(401)
 
+    if recording.processing:
+        raise HTTPException(425)
+
     byte = await cut_file(await ClientS3.get_file(recording.url), recording.tags)
 
     with wave.open(io.BytesIO(byte), 'rb') as dur:
