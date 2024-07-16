@@ -16,7 +16,7 @@ from ..tags.models import Tag
 from ..users.models import User
 
 from ..sound.sound import get_road
-
+from ..tags.models import TagType
 
 
 router = APIRouter(prefix='/result', tags=['result'])
@@ -28,6 +28,8 @@ async def cut_file(recording_bytes: bytes, tags: list[Tag]) -> bytes:
         audio = np.frombuffer(sound.readframes(params.nframes), dtype=np.int16)
 
     for tag in tags:
+        if tag.tag_type == TagType.SOURCETAG:
+            continue
         audio = np.delete(audio, slice(int(tag.start * params.framerate * params.sampwidth),
                                        int(tag.end * params.framerate * params.sampwidth)))
 
@@ -44,7 +46,7 @@ async def cut_file(recording_bytes: bytes, tags: list[Tag]) -> bytes:
 
 @router.delete('/{result_id}')
 async def delete_result(result_id: int, user: User = Depends(get_current_user),
-                        session: AsyncSession = Depends(get_session)):
+                        session: AsyncSession = Depends(get_session)) -> ResultRel:
     result = await session.scalar(Result.get_by_id(result_id))
 
     if not result:
@@ -75,7 +77,7 @@ async def get_result(result_id: int, user: User = Depends(get_current_user),
 
 @router.post('/{recording_id}')
 async def create_result(recording_id: int, user: User = Depends(get_current_user),
-                        session: AsyncSession = Depends(get_session)):
+                        session: AsyncSession = Depends(get_session)) -> ResultRead:
     recording = await session.scalar(Recording.get_by_id(recording_id))
 
     if recording is None:

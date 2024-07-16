@@ -48,7 +48,8 @@ async def delete_tag(tag_id: int, user: User = Depends(get_current_user),
 
 
 @router.post('/')
-async def create_tag(tag: TagCreate, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
+async def create_tag(tag: TagCreate, user: User = Depends(get_current_user),
+                     session: AsyncSession = Depends(get_session)) -> TagRead:
     tag_get = Tag(**tag.model_dump(), tag_type=TagType.USERTAG)
 
     if not tag_get:

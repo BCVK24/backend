@@ -79,7 +79,8 @@ async def get_recording(recording_id: int, user: User = Depends(get_current_user
 
 @router.post('/')
 async def upload_recording(user: User = Depends(get_current_user), recording: str = Form(),
-                           recording_file: UploadFile = File(), session: AsyncSession = Depends(get_session)):
+                           recording_file: UploadFile = File(),
+                           session: AsyncSession = Depends(get_session)) -> RecordingRead:
 
     byte = await sound_filtration(await recording_file.read())
 
