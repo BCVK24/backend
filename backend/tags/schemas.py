@@ -1,6 +1,5 @@
 from pydantic import BaseModel
-
-from .models import TagDescription
+from .models import TagType
 
 
 class TagBase(BaseModel):
@@ -14,10 +13,12 @@ class TagRead(TagBase):
     id: int
     recording_id: int
     description: str
+    tag_type: str
+
 
 class TagUpdate(TagBase):
     id: int
 
 class TagCreate(TagBase):
     recording_id: int
-    description: TagDescription
+    description: str

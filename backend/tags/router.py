@@ -8,7 +8,7 @@ from ..db.dependencies import get_session
 from ..users.models import User
 from ..users.auth import get_current_user
 
-
+from .models import TagType
 
 
 router = APIRouter(prefix='/tag', tags=['tag'])
@@ -49,7 +49,7 @@ async def delete_tag(tag_id: int, user: User = Depends(get_current_user),
 
 @router.post('/')
 async def create_tag(tag: TagCreate, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
-    tag_get = Tag(**tag.model_dump())
+    tag_get = Tag(**tag.model_dump(), tag_type=TagType.USERTAG)
 
     if not tag_get:
         raise HTTPException(404)

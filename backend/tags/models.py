@@ -8,9 +8,11 @@ from ..db.crud import CRUD
 from ..db.annotations import intpk
 
 
-class TagDescription(enum.Enum):
-    SILENT = "SILENT"
-    CUSTOM = "CUSTOM"
+class TagType(enum.Enum):
+    MODELTAG = "MODELTAG" # SPERMA
+    USERTAG = "USERTAG" # PORNO
+    SOURCETAG = "SOURCETAG" # V ROT GLUBOKO!!!!!!!!
+
 
 
 class Tag(Base, CRUD):
@@ -20,5 +22,6 @@ class Tag(Base, CRUD):
     start: Mapped[float]
     end: Mapped[float]
     description: Mapped[str]
+    tag_type: Mapped[TagType]
 
     recording: Mapped['Recording'] = relationship(back_populates='tags', lazy='joined')
