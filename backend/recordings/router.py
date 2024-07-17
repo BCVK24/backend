@@ -9,20 +9,18 @@ from ..db.dependencies import get_session
 from ..users.auth import get_current_user
 from .models import Recording
 from .relschemas import RecordingRel
-from .S3Model import S3Client
+from .S3Model import ClientS3
 from .schemas import RecordingRead, RecordingUpdate
 from ..users.models import User
 
 from ..sound.sound import sound_filtration, get_road
 
-#from ..worker.worker import broker
-#from faststream.redis import TestRedisBroker
+from ..worker.router import router as broker
 
 import io
 
 
 router = APIRouter(prefix='/recording', tags=['recording'])
-ClientS3 = S3Client("...", "...", "...", "...")
 
 
 @router.delete('/{recording_id}')
@@ -102,7 +100,6 @@ async def upload_recording(user: User = Depends(get_current_user), recording: st
     except IntegrityError as err:
         raise HTTPException(401)
 
-    # async with TestRedisBroker(broker) as Broker:
-    #     await Broker.publish(recording_db.id, "get_tags")
+    await broker.broker.publish(recording_db.id, "get_tags")
 
     return RecordingRead.model_validate(recording_db, from_attributes=True)

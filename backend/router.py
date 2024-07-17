@@ -19,11 +19,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
-async def hello_http():
-    await broker_router.broker.publish("Hello, Redis!", "test")
-    return "Hello, HTTP!"
-
 app.include_router(broker_router)
 app.include_router(recording_router)
 app.include_router(result_router)

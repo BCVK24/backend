@@ -14,6 +14,6 @@ class Result(Base, CRUD):
     url: Mapped[str]
     created_at: Mapped[dtnow]
     duration: Mapped[int]
-    soundwave: Mapped[str]
+    processing: Mapped[bool]
 
     source: Mapped['Recording'] = relationship(back_populates='results', lazy='joined')

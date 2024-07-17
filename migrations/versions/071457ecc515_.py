@@ -43,7 +43,6 @@ def upgrade() -> None:
     sa.Column('url', sa.String(), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text("TIMEZONE('utc', now())"), nullable=False),
     sa.Column('duration', sa.Integer(), nullable=False),
-    sa.Column('soundwave', sa.String(), nullable=False),
     sa.ForeignKeyConstraint(['source_id'], ['recordings.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )

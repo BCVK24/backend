@@ -43,3 +43,6 @@ class S3Client:
         f.close()
 
         return url
+
+
+ClientS3 = S3Client("...", "...", "...", "...")

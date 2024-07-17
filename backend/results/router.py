@@ -18,30 +18,10 @@ from ..users.models import User
 from ..sound.sound import get_road
 from ..tags.models import TagType
 
+from ..worker.router import router as broker
+
 
 router = APIRouter(prefix='/result', tags=['result'])
-
-
-async def cut_file(recording_bytes: bytes, tags: list[Tag]) -> bytes:
-    with wave.open(io.BytesIO(recording_bytes)) as sound:
-        params = sound.getparams()
-        audio = np.frombuffer(sound.readframes(params.nframes), dtype=np.int16)
-
-    for tag in tags:
-        if tag.tag_type == TagType.SOURCETAG:
-            continue
-        audio = np.delete(audio, slice(int(tag.start * params.framerate * params.sampwidth),
-                                       int(tag.end * params.framerate * params.sampwidth)))
-
-    ret = io.BytesIO()
-
-    with wave.open(ret, 'wb') as rt:
-        rt.setparams(params)
-        rt.writeframes(audio.tobytes())
-
-    ret.seek(0)
-
-    return ret.read()
 
 
 @router.delete('/{result_id}')
@@ -89,19 +69,12 @@ async def create_result(recording_id: int, user: User = Depends(get_current_user
     if recording.processing:
         raise HTTPException(425)
 
-    byte = await cut_file(await ClientS3.get_file(recording.url), recording.tags)
-
-    with wave.open(io.BytesIO(byte), 'rb') as dur:
-        duration = int(dur.getnframes() / float(dur.getframerate()))
-
-    url = await ClientS3.push_file(byte, user.id)
-
-    soundwave = str(await get_road(byte))
-
-    result = Result(source_id=recording.id, url=url, duration=duration, soundwave=soundwave)
+    result = Result(source_id=recording.id, url=recording.url, duration=recording.duration, processing=True)
 
     session.add(result)
 
     await session.commit()
+
+    broker.broker.publish(result.id, "cut_file")
 
     return ResultRead.model_validate(result, from_attributes=True)

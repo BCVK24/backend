@@ -11,6 +11,7 @@ class ResultRead(ResultBase):
     created_at: dt.datetime
     duration: int
     url: str
+    processing: bool
 
 
 class ResultCreate(ResultBase):

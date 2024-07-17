@@ -3,6 +3,30 @@ from scipy.signal import medfilt
 import wave
 import io
 
+from ..tags.models import TagType, Tag
+
+
+async def cut_file(recording_bytes: bytes, tags: list[Tag]) -> bytes:
+    with wave.open(io.BytesIO(recording_bytes)) as sound:
+        params = sound.getparams()
+        audio = np.frombuffer(sound.readframes(params.nframes), dtype=np.int16)
+
+    for tag in tags:
+        if tag.tag_type == TagType.SOURCETAG:
+            continue
+        audio = np.delete(audio, slice(int(tag.start * params.framerate * params.sampwidth),
+                                       int(tag.end * params.framerate * params.sampwidth)))
+
+    ret = io.BytesIO()
+
+    with wave.open(ret, 'wb') as rt:
+        rt.setparams(params)
+        rt.writeframes(audio.tobytes())
+
+    ret.seek(0)
+
+    return ret.read()
+
 
 def average(data, kernel_size):
     cumsum = np.cumsum(np.insert(data, 0, 0))
