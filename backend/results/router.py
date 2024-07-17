@@ -12,12 +12,7 @@ from ..recordings.router import ClientS3
 from ..users.auth import get_current_user
 from .relschemas import ResultRel
 from .schemas import ResultRead
-from ..tags.models import Tag
 from ..users.models import User
-
-from ..sound.sound import get_road
-from ..tags.models import TagType
-
 from ..worker.router import router as broker
 
 

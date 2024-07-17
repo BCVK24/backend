@@ -13,8 +13,6 @@ from .S3Model import ClientS3
 from .schemas import RecordingRead, RecordingUpdate
 from ..users.models import User
 
-from ..sound.sound import sound_filtration, get_road
-
 from ..worker.router import router as broker
 
 import io
@@ -81,17 +79,15 @@ async def upload_recording(user: User = Depends(get_current_user), recording: st
                            recording_file: UploadFile = File(),
                            session: AsyncSession = Depends(get_session)) -> RecordingRead:
 
-    byte = await sound_filtration(await recording_file.read())
+    byte = await recording_file.read()
 
     with wave.open(io.BytesIO(byte), 'rb') as dur:
-        duration = int(dur.getnframes() / float(dur.getframerate()))
+         duration = int(dur.getnframes() / float(dur.getframerate()))
 
     url = await ClientS3.push_file(byte, user.id)
 
-    soundwave = str(await get_road(byte))
-
     recording_db = Recording(url=url, creator_id=user.id, title=recording, duration=duration,
-                             soundwave=soundwave, processing=True)
+                             soundwave="soundwave", processing=True)
 
     session.add(recording_db)
 
@@ -100,6 +96,6 @@ async def upload_recording(user: User = Depends(get_current_user), recording: st
     except IntegrityError as err:
         raise HTTPException(401)
 
-    await broker.broker.publish(recording_db.id, "get_tags")
+    await broker.broker.publish(recording_db.id, "recording_compute")
 
     return RecordingRead.model_validate(recording_db, from_attributes=True)
