@@ -21,14 +21,14 @@ services:
     volumes:
       - ./env/db:/var/lib/postgresql/data
 
-  worker:
-    build:
-      context: .
-      dockerfile: ./backend/worker/Dockerfile
-    depends_on:
-      - db
-      - backend
-      - redis
+  # worker:
+  #   build:
+  #     context: .
+  #     dockerfile: ./backend/worker/Dockerfile
+  #   depends_on:
+  #     - db
+  #     - backend
+  #     - redis
 
   redis:
     image: redis:latest

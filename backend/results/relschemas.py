@@ -5,4 +5,3 @@ from ..recordings.schemas import RecordingRead
 class ResultRel(ResultRead):
     source: RecordingRead
     soundwave: str
-    url: str
