@@ -15,7 +15,8 @@ from ..users.models import User
 
 from ..sound.sound import sound_filtration, get_road
 
-from ..celery.worker import get_tags
+from ..worker.worker import broker
+from faststream.redis import TestRedisBroker
 
 import io
 
@@ -101,6 +102,7 @@ async def upload_recording(user: User = Depends(get_current_user), recording: st
     except IntegrityError as err:
         raise HTTPException(401)
 
-    get_tags.delay(recording_db.id)
+    async with TestRedisBroker(broker) as Broker:
+        await Broker.publish(recording_db.id, "get_tags")
 
     return RecordingRead.model_validate(recording_db, from_attributes=True)
