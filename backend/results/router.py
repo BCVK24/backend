@@ -1,7 +1,4 @@
-import io
-import wave
 
-import numpy as np
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
