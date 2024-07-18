@@ -14,6 +14,8 @@ from .schemas import RecordingRead, RecordingUpdate
 from ..users.models import User
 from faststream.redis import RedisBroker
 
+from ..tags.models import Tag, TagType
+
 import io
 
 
@@ -99,3 +101,27 @@ async def upload_recording(user: User = Depends(get_current_user), recording: st
         await reddis.publish(recording_db.id, "recording_compute")
 
     return RecordingRead.model_validate(recording_db, from_attributes=True)
+
+
+@router.get('/get_model_tags/{recording_id}') # <- DONT USE IT, IT`S BROKEN
+async def get_model_tags(recording_id: int, user: User = Depends(get_current_user),
+                         session: AsyncSession = Depends(get_session)) -> RecordingRead:
+    recording = await session.scalar(Recording.get_by_id(recording_id))
+
+    if not recording:
+        HTTPException(404)
+    if recording.processing:
+        HTTPException(425)
+
+    Tag.delete_model_tag_by_recording_id(recording)
+
+    tag_list = await session.scalars(Tag.get_source_tag_by_recording_id(recording_id))
+
+    for i in tag_list:
+        tag_new = Tag(recording_id=recording_id, start=i.start, end=i.end, description=i.description,
+                      tag_type=TagType.MODELTAG)
+        session.add(tag_new)
+
+    await session.commit()
+
+    return RecordingRead.model_validate(recording, from_attributes=True)

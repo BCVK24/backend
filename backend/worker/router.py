@@ -8,6 +8,8 @@ from fastapi import Depends
 from ..db.database import session_factory
 from ..db.dependencies import AsyncSession, get_session
 
+from ..tags.models import Tag
+
 from ..recordings.models import Recording
 from ..results.models import Result
 from ..recordings.S3Model import ClientS3
@@ -48,7 +50,7 @@ async def recording_compute(recording_id: int):
 
         await ClientS3.put_file(byte, recording.url)
 
-        recording.soundwave = get_road(byte)
+        recording.soundwave = str(await get_road(byte))
         recording.processing = False
 
         await session.commit()

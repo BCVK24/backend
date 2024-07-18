@@ -79,7 +79,7 @@ def convert_wav(speech_filename):
     
     return new_filename
 
-def filter(forced_alignments: list[str, float, float]) -> list[str, float, float, bool]:
+def filter(forced_alignments: list[list]) -> list[list]:
         """Метод для фильтрации размеченных токенов с временными метками, пока 
         рассматриваются 3 кейса: некоторые мусорные слова, матные и повторяющиеся. Параметр
         is_trash означает нужно ли удалять данный токен"""
