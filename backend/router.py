@@ -4,11 +4,10 @@ from .recordings.router import router as recording_router
 from .users.router import router as user_router
 from .results.router import router as result_router
 from .tags.router import router as tag_router
-from .worker.router import router as broker_router
 from .config import settings
 
 
-app = FastAPI(lifespan=broker_router.lifespan_context)
+app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
@@ -19,7 +18,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(broker_router)
 app.include_router(recording_router)
 app.include_router(result_router)
 app.include_router(user_router)

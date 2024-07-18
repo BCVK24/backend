@@ -12,8 +12,7 @@ from .relschemas import RecordingRel
 from .S3Model import ClientS3
 from .schemas import RecordingRead, RecordingUpdate
 from ..users.models import User
-
-from ..worker.router import router as broker
+from faststream.redis import RedisBroker
 
 import io
 
@@ -96,6 +95,7 @@ async def upload_recording(user: User = Depends(get_current_user), recording: st
     except IntegrityError as err:
         raise HTTPException(401)
 
-    await broker.broker.publish(recording_db.id, "recording_compute")
+    async with RedisBroker("redis://redis:6379/0") as reddis:
+        await reddis.publish(recording_db.id, "recording_compute")
 
     return RecordingRead.model_validate(recording_db, from_attributes=True)

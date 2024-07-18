@@ -14,8 +14,8 @@ class User(Base, CRUD):
     recordings: Mapped[list['Recording']] = relationship(back_populates='creator', lazy='selectin')
 
     @classmethod
-    def get_by_vk_id(self, vk_id: str) -> Select:
+    def get_by_vk_id(cls, vk_id: str) -> Select:
         query = (
-            select(User).where(self.vk_id == vk_id)
+            select(User).where(cls.vk_id == vk_id)
         )
         return query

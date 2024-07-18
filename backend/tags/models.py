@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, delete
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..db.database import Base
@@ -25,3 +25,7 @@ class Tag(Base, CRUD):
     tag_type: Mapped[TagType]
 
     recording: Mapped['Recording'] = relationship(back_populates='tags', lazy='joined')
+
+    @classmethod
+    def delete_model_tag_by_recording_id(cls, recording_id):
+        delete(Tag).where(cls.recording_id == recording_id and cls.tag_type == TagType.MODELTAG)

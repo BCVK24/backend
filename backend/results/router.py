@@ -13,7 +13,6 @@ from ..users.auth import get_current_user
 from .relschemas import ResultRel
 from .schemas import ResultRead
 from ..users.models import User
-from ..worker.router import router as broker
 
 
 router = APIRouter(prefix='/result', tags=['result'])
@@ -69,7 +68,5 @@ async def create_result(recording_id: int, user: User = Depends(get_current_user
     session.add(result)
 
     await session.commit()
-
-    broker.broker.publish(result.id, "cut_file")
 
     return ResultRead.model_validate(result, from_attributes=True)
