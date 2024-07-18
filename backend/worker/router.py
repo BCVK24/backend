@@ -48,6 +48,8 @@ async def recording_compute(recording_id: int):
 
         byte = await ClientS3.get_file(recording.url)
 
+        time.sleep(30)
+
         await ClientS3.put_file(byte, recording.url)
 
         recording.soundwave = str(await get_road(byte))

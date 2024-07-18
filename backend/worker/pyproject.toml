@@ -1,20 +1,22 @@
 [tool.poetry]
-name = "vkbc-backend"
+name = "vkbc-worker"
 version = "0.1.0"
 description = ""
-authors = []
-license = "MIT"
+authors = ["Your Name <you@example.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-alembic = "^1.13.2"
 SQLalchemy = "^2.0.31"
 fastapi = "^0.111.0"
 pydantic = "^2.8.0"
 pydantic-settings = "^2.3.4"
 asyncpg = "^0.29.0"
 aiobotocore = "^2.13.1"
+numpy = "^2.0.0"
+python-ffmpeg = "^2.0.12"
+redis = "^5.0.7"
+scipy = "^1.14.0"
 faststream = {extras = ["redis"], version = "^0.5.14"}
 
 
