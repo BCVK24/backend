@@ -14,6 +14,8 @@ from .relschemas import ResultRel
 from .schemas import ResultRead
 from ..users.models import User
 
+from faststream.redis import RedisBroker
+
 
 router = APIRouter(prefix='/result', tags=['result'])
 
@@ -68,5 +70,8 @@ async def create_result(recording_id: int, user: User = Depends(get_current_user
     session.add(result)
 
     await session.commit()
+
+    async with RedisBroker("redis://redis:6379/0") as reddis:
+        await reddis.publish(result.id, "cut_result")
 
     return ResultRead.model_validate(result, from_attributes=True)

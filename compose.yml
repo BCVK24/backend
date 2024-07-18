@@ -29,6 +29,8 @@ services:
        - db
        - backend
        - redis
+     volumes:
+       - ./env/local_save:/app/local_save
 
   redis:
     image: redis:latest

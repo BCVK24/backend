@@ -19,32 +19,38 @@ broker = RedisBroker("redis://redis:6379/0")
 app = FastStream(broker)
 
 
-# @router.subscriber("cut_result")
-# async def cut_result(result_id: int):
-#     async with session_factory() as session:
-#         result = await session.scalar(Result.get_by_id(result_id))
-#
-#     recording = result.source
-#
-#     byte = await cut_file(await ClientS3.get_file(recording.url), recording.tags)
-#
-#     with wave.open(io.BytesIO(byte), 'rb') as dur:
-#         result.duration = int(dur.getnframes() / float(dur.getframerate()))
-#
-#     result.url = await ClientS3.push_file(byte, recording.creator_id)
-#
-#     result.processing = False
-#
-#     async with session_factory() as session:
-#         await session.commit()
-#
-#     return {'sperma': 'vo rtu'}
+@broker.subscriber("cut_result")
+async def cut_result(result_id: int):
+    async with session_factory() as session:
+        result = await session.scalar(Result.get_by_id(result_id))
+
+        recording = result.source
+
+        byte = await cut_file(await ClientS3.get_file(recording.url), recording.tags)
+
+        with wave.open(io.BytesIO(byte), 'rb') as dur:
+            result.duration = int(dur.getnframes() / float(dur.getframerate()))
+
+        result.url = await ClientS3.push_file(byte, recording.creator_id)
+        result.processing = False
+
+        await session.commit()
+
+    return {'sperma': 'vo rtu'}
 
 
 @broker.subscriber("recording_compute")
-async def recording_compute(recording_id: int, session: AsyncSession = Depends(get_session)):
-    recording = await session.scalar(Recording.get_by_id(recording_id))
+async def recording_compute(recording_id: int):
+    async with session_factory() as session:
+        recording = await session.scalar(Recording.get_by_id(recording_id))
 
-    byte = await ClientS3.get_file(recording.url)
+        byte = await ClientS3.get_file(recording.url)
+
+        await ClientS3.put_file(byte, recording.url)
+
+        recording.soundwave = get_road(byte)
+        recording.processing = False
+
+        await session.commit()
 
     return {'porno': '1488'}
