@@ -32,9 +32,13 @@ services:
        - redis
      volumes:
        - ./env/local_save:/app/local_save
+     ports:
+       - 6379:6379
 
   redis:
     image: redis:latest
+    ports:
+      - 6379:6379
 
   nginx:
     image: nginx:latest

@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,6 +11,11 @@ from .schemas import ResultRead
 from ..users.models import User
 
 from faststream.redis import RedisBroker
+
+import io
+from ..sound.sound import cut_file
+
+import wave
 
 
 router = APIRouter(prefix='/result', tags=['result'])
@@ -55,6 +59,13 @@ async def create_result(recording_id: int, user: User = Depends(get_current_user
                         session: AsyncSession = Depends(get_session)) -> ResultRead:
     recording = await session.get(Recording, recording_id)
 
+    byte = await cut_file(await ClientS3.get_file(recording.url), recording.tags)
+
+    with wave.open(io.BytesIO(byte), 'rb') as dur:
+        duration = int(dur.getnframes() / float(dur.getframerate()))
+
+    url = await ClientS3.push_file(byte, recording.creator_id)
+
     if recording is None:
         raise HTTPException(404)
 
@@ -64,7 +75,7 @@ async def create_result(recording_id: int, user: User = Depends(get_current_user
     if recording.processing:
         raise HTTPException(425)
 
-    result = Result(source_id=recording.id, url=recording.url, duration=recording.duration, processing=True)
+    result = Result(source_id=recording_id, url=url, duration=duration, processing=False)
 
     session.add(result)
 
