@@ -5,6 +5,7 @@ from .models import TagType
 class TagBase(BaseModel):
     start: float
     end: float
+    description: str
     class Config:
         use_enum_values = True
 
@@ -12,7 +13,6 @@ class TagBase(BaseModel):
 class TagRead(TagBase):
     id: int
     recording_id: int
-    description: str
     tag_type: str
 
 

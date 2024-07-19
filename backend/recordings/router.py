@@ -25,7 +25,7 @@ router = APIRouter(prefix='/recording', tags=['recording'])
 @router.delete('/{recording_id}')
 async def delete_recording(recording_id: int, user: User = Depends(get_current_user),
                            session: AsyncSession = Depends(get_session)) -> RecordingRead:
-    get_rec = await session.scalar(Recording.get_by_id(recording_id))
+    get_rec = await session.get(Recording, recording_id)
 
     if not get_rec:
         raise HTTPException(404)
@@ -49,7 +49,7 @@ async def delete_recording(recording_id: int, user: User = Depends(get_current_u
 @router.put('/')
 async def put_recording_name(recording: RecordingUpdate, user: User = Depends(get_current_user),
                              session: AsyncSession = Depends(get_session)) -> RecordingRead:
-    recording_db = await session.scalar(Recording.get_by_id(recording.id))
+    recording_db = await session.get(Recording, recording.id)
 
     if not recording_db:
         raise HTTPException(404)
@@ -67,7 +67,7 @@ async def put_recording_name(recording: RecordingUpdate, user: User = Depends(ge
 @router.get('/{recording_id}')
 async def get_recording(recording_id: int, user: User = Depends(get_current_user),
                         session: AsyncSession = Depends(get_session)) -> RecordingRel:
-    recording = await session.scalar(Recording.get_by_id(recording_id))
+    recording = await session.get(Recording, recording_id)
 
     if not recording:
         raise HTTPException(404)
@@ -109,7 +109,7 @@ async def upload_recording(user: User = Depends(get_current_user), recording: st
 @router.get('/get_model_tags/{recording_id}') # <- DONT USE IT, IT`S BROKEN
 async def get_model_tags(recording_id: int, user: User = Depends(get_current_user),
                          session: AsyncSession = Depends(get_session)) -> RecordingRead:
-    recording = await session.scalar(Recording.get_by_id(recording_id))
+    recording = await session.get(Recording, recording_id)
 
     if not recording:
         raise HTTPException(404)
