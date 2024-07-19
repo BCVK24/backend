@@ -75,7 +75,7 @@ async def create_result(recording_id: int, user: User = Depends(get_current_user
     if recording.processing:
         raise HTTPException(425)
 
-    result = Result(source_id=recording_id, url=url, duration=duration, processing=False)
+    result = Result(source_id=recording_id, url=url, duration=duration)
 
     session.add(result)
 
