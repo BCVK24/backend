@@ -9,6 +9,7 @@ from ..users.models import User
 from ..users.auth import get_current_user
 
 from .models import TagType
+from ..recordings.models import Recording
 
 
 router = APIRouter(prefix='/tag', tags=['tag'])
@@ -50,10 +51,18 @@ async def delete_tag(tag_id: int, user: User = Depends(get_current_user),
 @router.post('/')
 async def create_tag(tag: TagCreate, user: User = Depends(get_current_user),
                      session: AsyncSession = Depends(get_session)) -> TagRead:
+    if tag.start > tag.end:
+        raise HTTPException(422)
+
+    recording = await session.scalar(Recording.get_by_id(tag.recording_id))
+
+    if recording.processing:
+        raise HTTPException(425)
+
     tag_get = Tag(**tag.model_dump(), tag_type=TagType.USERTAG)
 
-    if not tag_get:
-        raise HTTPException(404)
+    tag_get.start = max(0, tag_get.start)
+    tag_get.end = min(recording.duration, tag_get.end)
 
     session.add(tag_get)
 

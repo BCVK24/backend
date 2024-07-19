@@ -33,6 +33,9 @@ async def delete_recording(recording_id: int, user: User = Depends(get_current_u
     if get_rec.creator_id != user.id:
         raise HTTPException(401)
 
+    if get_rec.processing:
+        raise HTTPException(425)
+
     await ClientS3.delete_file(get_rec.url)
 
     record_return = RecordingRead.model_validate(get_rec, from_attributes=True)
@@ -109,9 +112,9 @@ async def get_model_tags(recording_id: int, user: User = Depends(get_current_use
     recording = await session.scalar(Recording.get_by_id(recording_id))
 
     if not recording:
-        HTTPException(404)
+        raise HTTPException(404)
     if recording.processing:
-        HTTPException(425)
+        raise HTTPException(425)
 
     Tag.delete_model_tag_by_recording_id(recording)
 

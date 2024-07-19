@@ -24,7 +24,7 @@ class Tag(Base, CRUD):
     description: Mapped[str]
     tag_type: Mapped[TagType]
 
-    recording: Mapped['Recording'] = relationship(back_populates='tags', lazy='joined')
+    recording: Mapped['Recording'] = relationship(back_populates='tags', lazy='joined', cascade='all, delete-orphan')
 
     @classmethod
     def delete_model_tag_by_recording_id(cls, recording_id):

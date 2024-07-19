@@ -25,6 +25,9 @@ async def delete_result(result_id: int, user: User = Depends(get_current_user),
     if not result:
         raise HTTPException(404)
 
+    if result.processing:
+        raise HTTPException(425)
+
     await ClientS3.delete_file(result.url)
 
     rec_result = ResultRel.model_validate(result, from_attributes=True)
