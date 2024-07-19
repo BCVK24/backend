@@ -1,5 +1,5 @@
 from typing import Optional
-from model_abstract import ModelAbstract
+from .model_abstract import ModelAbstract
 
 
 class ASRInference:

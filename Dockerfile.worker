@@ -4,5 +4,13 @@ WORKDIR /app
 COPY . .
 
 RUN pip install -r backend/worker/requirements.txt
+RUN pip install whisper
+RUN pip install torch
+RUN pip install torchaudio
+RUN pip install nemo
+RUN pip install vosk
+RUN pip install pyannote.audio
+RUN pip install nemo-toolkit
+RUN pip install hydra
 
 CMD ["python3", "worker.py"]
