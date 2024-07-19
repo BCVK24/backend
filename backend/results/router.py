@@ -20,7 +20,7 @@ router = APIRouter(prefix='/result', tags=['result'])
 @router.delete('/{result_id}')
 async def delete_result(result_id: int, user: User = Depends(get_current_user),
                         session: AsyncSession = Depends(get_session)) -> ResultRel:
-    result = await session.scalar(Result.get_by_id(result_id))
+    result = await session.get(Result, result_id)
 
     if not result:
         raise HTTPException(404)
@@ -42,8 +42,7 @@ async def delete_result(result_id: int, user: User = Depends(get_current_user),
 @router.get('/{result_id}')
 async def get_result(result_id: int, user: User = Depends(get_current_user),
                      session: AsyncSession = Depends(get_session)) -> ResultRel:
-    query = Result.get_by_id(result_id)
-    result = await session.scalar(query)
+    result = await session.get(Result, result_id)
 
     if not result:
         raise HTTPException(404)
@@ -54,7 +53,7 @@ async def get_result(result_id: int, user: User = Depends(get_current_user),
 @router.post('/{recording_id}')
 async def create_result(recording_id: int, user: User = Depends(get_current_user),
                         session: AsyncSession = Depends(get_session)) -> ResultRead:
-    recording = await session.scalar(Recording.get_by_id(recording_id))
+    recording = await session.get(Recording, recording_id)
 
     if recording is None:
         raise HTTPException(404)

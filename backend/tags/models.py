@@ -9,9 +9,9 @@ from ..db.annotations import intpk
 
 
 class TagType(enum.Enum):
-    MODELTAG = "MODELTAG" # SPERMA
-    USERTAG = "USERTAG" # PORNO
-    SOURCETAG = "SOURCETAG" # V ROT GLUBOKO!!!!!!!!
+    MODELTAG = "MODELTAG" 
+    USERTAG = "USERTAG"
+    SOURCETAG = "SOURCETAG"
 
 
 

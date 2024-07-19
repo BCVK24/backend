@@ -37,7 +37,7 @@ async def get_tags_from_model(recording_url, recording_id):
 @broker.subscriber("cut_result")
 async def cut_result(result_id: int):
     async with session_factory() as session:
-        result = await session.scalar(Result.get_by_id(result_id))
+        result = await session.get(Result, result_id)
 
         recording = result.source
 
@@ -46,18 +46,20 @@ async def cut_result(result_id: int):
         with wave.open(io.BytesIO(byte), 'rb') as dur:
             result.duration = int(dur.getnframes() / float(dur.getframerate()))
 
+        time.sleep(30)
+
         result.url = await ClientS3.push_file(byte, recording.creator_id)
         result.processing = False
 
         await session.commit()
 
-    return {'sperma': 'vo rtu'}
+    return 200
 
 
 @broker.subscriber("recording_compute")
 async def recording_compute(recording_id: int):
     async with session_factory() as session:
-        recording = await session.scalar(Recording.get_by_id(recording_id))
+        recording = await session.get(Recording, recording_id)
 
         byte = await ClientS3.get_file(recording.url)
 
@@ -73,4 +75,4 @@ async def recording_compute(recording_id: int):
 
         await session.commit()
 
-    return {'porno': '1488'}
+    return 200

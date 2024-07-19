@@ -18,13 +18,14 @@ router = APIRouter(prefix='/tag', tags=['tag'])
 @router.put('/')
 async def update_tag(tag: TagUpdate, user: User = Depends(get_current_user),
                      session: AsyncSession = Depends(get_session)) -> TagRead:
-    tag_db = await session.scalar(Tag.get_by_id(tag.id))
+    tag_db = await session.get(Tag, tag.id)
 
     if not tag_db:
         raise HTTPException(404)
 
     tag_db.start = tag.start
     tag_db.end = tag.end
+    tag_db.description = tag.description
 
     await session.commit()
 
@@ -34,7 +35,7 @@ async def update_tag(tag: TagUpdate, user: User = Depends(get_current_user),
 @router.delete('/{tag_id}')
 async def delete_tag(tag_id: int, user: User = Depends(get_current_user),
                      session: AsyncSession = Depends(get_session)) -> TagRead:
-    tag_get = await session.scalar(Tag.get_by_id(tag_id))
+    tag_get = await session.get(Tag, tag_id)
 
     if not tag_get:
         raise HTTPException(404)
@@ -54,7 +55,7 @@ async def create_tag(tag: TagCreate, user: User = Depends(get_current_user),
     if tag.start > tag.end:
         raise HTTPException(422)
 
-    recording = await session.scalar(Recording.get_by_id(tag.recording_id))
+    recording = await session.get(Recording, tag.recording_id)
 
     if recording.processing:
         raise HTTPException(425)
