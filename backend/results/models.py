@@ -16,4 +16,4 @@ class Result(Base, CRUD):
     duration: Mapped[int]
     processing: Mapped[bool]
 
-    source: Mapped['Recording'] = relationship(back_populates='results', lazy='joined', cascade='all, delete-orphan')
+    source: Mapped['Recording'] = relationship(back_populates='results', lazy='joined')

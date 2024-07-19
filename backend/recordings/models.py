@@ -18,5 +18,5 @@ class Recording(Base, CRUD):
     processing: Mapped[bool]
 
     creator: Mapped['User'] = relationship(back_populates='recordings', lazy='joined')
-    tags: Mapped[list['Tag']] = relationship(back_populates='recording', lazy='selectin')
-    results: Mapped[list['Result']] = relationship(back_populates='source', lazy='selectin')
+    tags: Mapped[list['Tag']] = relationship(back_populates='recording', lazy='selectin', cascade='all, delete-orphan')
+    results: Mapped[list['Result']] = relationship(back_populates='source', lazy='selectin', cascade='all, delete-orphan')
