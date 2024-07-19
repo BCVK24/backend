@@ -106,7 +106,7 @@ async def upload_recording(user: User = Depends(get_current_user), recording: st
     return RecordingRead.model_validate(recording_db, from_attributes=True)
 
 
-@router.get('/get_model_tags/{recording_id}') # <- DONT USE IT, IT`S BROKEN
+@router.post('/model_tags/{recording_id}')
 async def get_model_tags(recording_id: int, user: User = Depends(get_current_user),
                          session: AsyncSession = Depends(get_session)) -> RecordingRead:
     recording = await session.get(Recording, recording_id)
@@ -116,7 +116,7 @@ async def get_model_tags(recording_id: int, user: User = Depends(get_current_use
     if recording.processing:
         raise HTTPException(425)
 
-    Tag.delete_model_tag_by_recording_id(recording)
+    Tag.delete_model_tag_by_recording_id(recording_id)
 
     tag_list = await session.scalars(Tag.get_source_tag_by_recording_id(recording_id))
 
@@ -125,6 +125,22 @@ async def get_model_tags(recording_id: int, user: User = Depends(get_current_use
                       tag_type=TagType.MODELTAG)
         session.add(tag_new)
 
+    await session.commit()
+
+    return RecordingRead.model_validate(recording, from_attributes=True)
+
+
+@router.delete('/model_tags/{recording_id}')
+async def delete_model_tags(recording_id: int, user: User = Depends(get_current_user),
+                         session: AsyncSession = Depends(get_session)) -> RecordingRead:
+    recording = await session.get(Recording, recording_id)
+
+    if not recording:
+        raise HTTPException(404)
+    if recording.processing:
+        raise HTTPException(425)
+
+    Tag.delete_model_tag_by_recording_id(recording_id)
     await session.commit()
 
     return RecordingRead.model_validate(recording, from_attributes=True)
