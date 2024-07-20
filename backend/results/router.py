@@ -29,16 +29,19 @@ async def delete_result(result_id: int, user: User = Depends(get_current_user),
     if not result:
         raise HTTPException(404)
 
-    if result.processing:
+    if result.source.creator_id != user.id:
         raise HTTPException(425)
 
     await ClientS3.delete_file(result.url)
 
     rec_result = ResultRel.model_validate(result, from_attributes=True)
 
-    await session.delete(result)
+    try:
+        await session.delete(result)
 
-    await session.commit()
+        await session.commit()
+    except Exception as e:
+        raise HTTPException(401)
 
     return rec_result
 
@@ -50,6 +53,8 @@ async def get_result(result_id: int, user: User = Depends(get_current_user),
 
     if not result:
         raise HTTPException(404)
+    if result.source.creator_id != user.id:
+        raise HTTPException(401)
 
     return ResultRel.model_validate(result, from_attributes=True)
 
@@ -68,18 +73,19 @@ async def create_result(recording_id: int, user: User = Depends(get_current_user
 
     if recording is None:
         raise HTTPException(404)
-
     if recording.creator_id != user.id:
         raise HTTPException(401)
-
     if recording.processing:
         raise HTTPException(425)
 
     result = Result(source_id=recording_id, url=url, duration=duration)
 
-    session.add(result)
+    try:
+        session.add(result)
 
-    await session.commit()
+        await session.commit()
+    except Exception as e:
+        raise HTTPException(401)
 
     async with RedisBroker("redis://redis:6379/0") as reddis:
         await reddis.publish(result.id, "cut_result")

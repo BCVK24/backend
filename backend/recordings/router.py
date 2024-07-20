@@ -29,10 +29,8 @@ async def delete_recording(recording_id: int, user: User = Depends(get_current_u
 
     if not get_rec:
         raise HTTPException(404)
-
     if get_rec.creator_id != user.id:
         raise HTTPException(401)
-
     if get_rec.processing:
         raise HTTPException(425)
 
@@ -53,7 +51,6 @@ async def put_recording_name(recording: RecordingUpdate, user: User = Depends(ge
 
     if not recording_db:
         raise HTTPException(404)
-
     if recording_db.creator_id != user.id:
         raise HTTPException(401)
 
@@ -71,7 +68,6 @@ async def get_recording(recording_id: int, user: User = Depends(get_current_user
 
     if not recording:
         raise HTTPException(404)
-
     if recording.creator_id != user.id:
         raise HTTPException(401)
 
@@ -93,11 +89,11 @@ async def upload_recording(user: User = Depends(get_current_user), recording: st
     recording_db = Recording(url=url, creator_id=user.id, title=recording, duration=duration,
                              soundwave="soundwave", processing=True)
 
-    session.add(recording_db)
-
     try:
+        session.add(recording_db)
+
         await session.commit()
-    except IntegrityError as err:
+    except Exception as e:
         raise HTTPException(401)
 
     async with RedisBroker("redis://redis:6379/0") as reddis:
@@ -113,6 +109,8 @@ async def get_model_tags(recording_id: int, user: User = Depends(get_current_use
 
     if not recording:
         raise HTTPException(404)
+    if recording.creator_id != user.id:
+        raise HTTPException(401)
     if recording.processing:
         raise HTTPException(425)
 
@@ -137,6 +135,8 @@ async def delete_model_tags(recording_id: int, user: User = Depends(get_current_
 
     if not recording:
         raise HTTPException(404)
+    if recording.creator_id != user.id:
+        raise HTTPException(401)
     if recording.processing:
         raise HTTPException(425)
 
