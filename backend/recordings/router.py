@@ -114,7 +114,9 @@ async def get_model_tags(recording_id: int, user: User = Depends(get_current_use
     if recording.processing:
         raise HTTPException(425)
 
-    Tag.delete_model_tag_by_recording_id(recording_id)
+    stmt = Tag.delete_model_tag_by_recording_id(recording_id)
+
+    await session.execute(stmt)
 
     tag_list = await session.scalars(Tag.get_source_tag_by_recording_id(recording_id))
 
@@ -140,7 +142,10 @@ async def delete_model_tags(recording_id: int, user: User = Depends(get_current_
     if recording.processing:
         raise HTTPException(425)
 
-    Tag.delete_model_tag_by_recording_id(recording_id)
+    stmt = Tag.delete_model_tag_by_recording_id(recording_id)
+
+    await session.execute(stmt)
+
     await session.commit()
 
     return RecordingRel.model_validate(recording, from_attributes=True)
