@@ -1,9 +1,12 @@
 import wave
 
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Form
+from faststream.redis import RedisBroker
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import contains_eager
+from sqlalchemy import select
 
 from ..db.dependencies import get_session
 from ..users.auth import get_current_user
@@ -12,7 +15,6 @@ from .relschemas import RecordingRel
 from .S3Model import ClientS3
 from .schemas import RecordingRead, RecordingUpdate
 from ..users.models import User
-from faststream.redis import RedisBroker
 
 from ..tags.models import Tag, TagType
 
@@ -102,7 +104,7 @@ async def upload_recording(user: User = Depends(get_current_user), recording: st
     return RecordingRead.model_validate(recording_db, from_attributes=True)
 
 
-@router.post('/model_tags/{recording_id}')
+@router.post('/model_tags/{recording_id}', tags=['model tags'])
 async def get_model_tags(recording_id: int, user: User = Depends(get_current_user),
                          session: AsyncSession = Depends(get_session)) -> RecordingRel:
     recording = await session.get(Recording, recording_id)
@@ -130,7 +132,7 @@ async def get_model_tags(recording_id: int, user: User = Depends(get_current_use
     return RecordingRel.model_validate(recording, from_attributes=True)
 
 
-@router.delete('/model_tags/{recording_id}')
+@router.delete('/model_tags/{recording_id}', tags=['model tags'])
 async def delete_model_tags(recording_id: int, user: User = Depends(get_current_user),
                          session: AsyncSession = Depends(get_session)) -> RecordingRel:
     recording = await session.get(Recording, recording_id)

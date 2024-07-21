@@ -18,7 +18,7 @@ class TagType(enum.Enum):
 class Tag(Base, CRUD):
     __tablename__ = 'tag'
     id: Mapped[intpk]
-    recording_id: Mapped[int] = mapped_column(ForeignKey('recordings.id', ondelete='CASCADE'))
+    recording_id: Mapped[int] = mapped_column(ForeignKey('recording.id', ondelete='CASCADE'))
     start: Mapped[float]
     end: Mapped[float]
     description: Mapped[str]
