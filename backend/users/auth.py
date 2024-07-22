@@ -18,10 +18,7 @@ from ..config import settings
 api_key_header = APIKeyHeader(name='Authorization')
 
 
-async def get_current_user(token: str = Security(api_key_header), session: AsyncSession = Depends(get_session)) -> User:
-    if not token:
-        raise HTTPException(401)
-
+async def get_user_by_vk_app(token: str) -> str:
     decode = base64.b64decode(token.strip("VK ") + "===").decode().replace("'", '').strip("?")
 
     args = dict()
@@ -33,7 +30,7 @@ async def get_current_user(token: str = Security(api_key_header), session: Async
     sign_args = '&'.join([f'{i}={args[i]}' for i in args.keys() if i.startswith('vk_')])
 
     hashed = base64.b64encode(
-       hmac.new(settings.CLIENT_SECRET.encode(), sign_args.encode(), hashlib.sha256).digest()
+        hmac.new(settings.CLIENT_SECRET.encode(), sign_args.encode(), hashlib.sha256).digest()
     ).decode().replace('+', '-').replace('/', '_').replace('=', '')
 
     args['sign'] = args['sign'].strip()
@@ -45,7 +42,25 @@ async def get_current_user(token: str = Security(api_key_header), session: Async
     if time.time() - int(args['vk_ts']) >= 60 * 60:
         raise HTTPException(401)
 
-    user_id = str(args['vk_user_id'])
+    return str(args['vk_user_id'])
+
+
+async def get_user_by_bot(token: str) -> str:
+    return base64.b64decode(token.strip("VKBOT ") + "===").decode().replace("'", '').strip("?")
+
+
+async def get_current_user(token: str = Security(api_key_header), session: AsyncSession = Depends(get_session)) -> User:
+    if not token:
+        raise HTTPException(401)
+
+    user_id = ""
+
+    if token.startswith("VK "):
+        user_id = await get_user_by_vk_app(token)
+    elif token.startswith("VKBOT "):
+        user_id = await get_user_by_bot(token)
+    else:
+        raise HTTPException(422)
 
     user = await session.scalar(User.get_by_vk_id(str(user_id)))
 

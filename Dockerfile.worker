@@ -4,6 +4,5 @@ WORKDIR /app
 COPY . .
 
 RUN pip install -r backend/worker/requirements.txt
-RUN pip install -r backend/worker/ML/requirements.txt
 
 CMD ["python3", "worker.py"]

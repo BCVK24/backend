@@ -5,7 +5,10 @@ from faststream.redis import RedisBroker
 from faststream import FastStream
 from fastapi import Depends
 
-from ..db.database import session_factory
+from ..db.database import session_factory, engine
+from ..config import settings
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncAttrs
 
 from ..tags.models import Tag, TagType
 
@@ -18,7 +21,10 @@ from ..recordings.S3Model import ClientS3
 from ..sound.sound import get_road
 
 
-broker = RedisBroker("redis://localhost:6379/0")
+engine = create_async_engine("postgresql+asyncpg://postgres:postgres@localhost:5432/vk-pg")
+session_factory = async_sessionmaker(engine, expire_on_commit=False)
+
+broker = RedisBroker("redis://localhost:6379")
 app = FastStream(broker)
 
 
@@ -39,16 +45,16 @@ async def recording_compute(recording_id: int):
         recording = {"url": "12024-07-22_09.17.35.224357.wav"}
         byte = await ClientS3.get_file(recording["url"])
 
-        # time.sleep(5)
+        time.sleep(5)
 
-        # await ClientS3.put_file(byte, recording["url"])
+        await ClientS3.put_file(byte, recording["url"])
 
-        # recording.soundwave = str(await get_road(byte))
+        recording.soundwave = str(await get_road(byte))
 
         await get_tags_from_model("/home/ubuntu/backend/env/local_save/" + recording["url"], recording_id)
 
         recording.processing = False
 
-        # await session.commit()
+        await session.commit()
 
     return 200
