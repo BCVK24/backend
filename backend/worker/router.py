@@ -9,8 +9,8 @@ from ..db.database import session_factory
 
 from ..tags.models import Tag, TagType
 
-from .ML.main import asr
-from .ML.utils import filter
+from .ML.main import asr, bert
+# from .ML.utils import filter
 
 from ..recordings.models import Recording
 from ..recordings.S3Model import ClientS3
@@ -18,12 +18,12 @@ from ..recordings.S3Model import ClientS3
 from ..sound.sound import get_road
 
 
-broker = RedisBroker("redis://redis:6379/0")
+broker = RedisBroker("redis://localhost:6379/0")
 app = FastStream(broker)
 
 
 async def get_tags_from_model(recording_url, recording_id):
-    tags = filter(asr.forced_align(recording_url))
+    tags = bert.filter(asr.forced_align(recording_url))
     async with session_factory() as session:
         for i in tags:
             if i[3]:
@@ -35,20 +35,20 @@ async def get_tags_from_model(recording_url, recording_id):
 @broker.subscriber("recording_compute")
 async def recording_compute(recording_id: int):
     async with session_factory() as session:
-        recording = await session.get(Recording, recording_id)
+        # recording = await session.get(Recording, recording_id)
+        recording = {"url": "12024-07-22_09.17.35.224357.wav"}
+        byte = await ClientS3.get_file(recording["url"])
 
-        byte = await ClientS3.get_file(recording.url)
+        # time.sleep(5)
 
-        time.sleep(30)
+        # await ClientS3.put_file(byte, recording["url"])
 
-        await ClientS3.put_file(byte, recording.url)
+        # recording.soundwave = str(await get_road(byte))
 
-        recording.soundwave = str(await get_road(byte))
-
-        await get_tags_from_model(recording.url, recording_id)
+        await get_tags_from_model("/home/ubuntu/backend/env/local_save/" + recording["url"], recording_id)
 
         recording.processing = False
 
-        await session.commit()
+        # await session.commit()
 
     return 200

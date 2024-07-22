@@ -12,7 +12,7 @@ import numpy
 import json
 import time
 
-from nemo.collections.asr.models import EncDecCTCModel
+from nemo.collections.asr.models import EncDecCTCModel, EncDecRNNTBPEModel
 from nemo.collections.asr.modules.audio_preprocessing import (
     AudioToMelSpectrogramPreprocessor as NeMoAudioToMelSpectrogramPreprocessor
 )
@@ -23,12 +23,14 @@ from nemo.collections.asr.parts.preprocessing.features import (
     FilterbankFeaturesTA as NeMoFilterbankFeaturesTA
 )
 
+import nemo.collections.asr.modules
+
 from vosk import Model, KaldiRecognizer, GpuInit
 from torch import Tensor
 from torchaudio.functional._alignment import TokenSpan
 from pyannote.audio import Pipeline
-from utils import segment_audio, RUSSIAN_VOCABULARY
-from conf.config import HF_TOKEN 
+from .utils import segment_audio, RUSSIAN_VOCABULARY
+from .conf.config import HF_TOKEN 
 
 
 file_log = logging.FileHandler('asr_logs.log')
@@ -38,7 +40,6 @@ logging.basicConfig(handlers=(file_log, console_out),
                     format='[%(asctime)s | %(levelname)s]: %(message)s', 
                     datefmt='%m.%d.%Y %H:%M:%S',
                     level=logging.INFO)
-
 
 locale.getpreferredencoding = lambda: "UTF-8"
 DEVICE_DEFAULT = 'cpu'
@@ -56,18 +57,28 @@ class ModelAbstract:
         self._model_name = model_name
         self._model_config = model_config
         self._emission = None
+
+        logging.info('Класс ModelAbstract был запущен')
         
         self._load_config()
         logging.info('Конфиг загружен и инициализирован')
         self._load_model()
         logging.info('Модель загружена')
 
+
     def _load_model(self):
         """Метод для загрузки ASR-модели в зависимости от выбранной модели
         и её конфигурации."""
 
-        if self._model_name == 'GigaAM':
+        if self._model_name == 'GigaAM' and self._model_config['model_type'] == 'CTC':
             self._model = EncDecCTCModel.from_config_file(self._model_config['model_config'])
+            self._ckpt = torch.load(self._model_config['model_weights'], map_location=self._device)
+            self._model.load_state_dict(self._ckpt, strict=False)
+            self._model.eval()
+            self._model = self._model.to(self._device)
+
+        elif self._model_name == 'GigaAM' and self._model_config['model_type'] == 'RNNT':
+            self._model = EncDecRNNTBPEModel.from_config_file(self._model_config['model_config'])
             self._ckpt = torch.load(self._model_config['model_weights'], map_location=self._device)
             self._model.load_state_dict(self._ckpt, strict=False)
             self._model.eval()
@@ -81,10 +92,11 @@ class ModelAbstract:
             if self._device == 'cuda':
                 GpuInit()
             
-            self.model = Model(model_path=self._model_config['model_config'],
-                               )
+            self._model = Model(model_path=self._model_config['model_config'])
+
         else:
             raise NameError('No such model was found!')
+        
         
     def _load_config(self):
         """Метод для загрузки и инициализации конфигурационных
@@ -123,6 +135,7 @@ class ModelAbstract:
         segments, self._boundaries = segment_audio(waveform, pipeline)
         
         return segments
+    
 
     def _get_alignments(self, emission: Tensor, tokens: list[int]) -> tuple[Tensor]:
         """Метод для получения тензоров выравнивания и скоров на основе переданных
@@ -136,6 +149,7 @@ class ModelAbstract:
     
 
         return alignments, scores
+
 
     def _unflatten(self, list_: list[TokenSpan], 
                    lengths: list[int]) -> list[list[TokenSpan]]:
@@ -152,6 +166,20 @@ class ModelAbstract:
             
         return ret
 
+
+    def _format_time(seconds):
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        seconds = seconds % 60
+        full_seconds = int(seconds)
+        milliseconds = int((seconds - full_seconds) * 100)
+
+        if hours > 0:
+            return f"{hours:02}:{minutes:02}:{full_seconds:02}:{milliseconds:02}"
+        else:
+            return f"{minutes:02}:{full_seconds:02}:{milliseconds:02}"
+
+
     def _get_wav_duration(self, speech_filename: str) -> int:
         """Метод необходим для получения длительности wav файла 
         в секундах."""
@@ -163,6 +191,7 @@ class ModelAbstract:
 
             return int(duration)
 
+
     def _tokenize(self, audio_segments: str) -> list[list[str]]:
         """Метод для токенизации аудио-сегмента или всего wav файла."""
 
@@ -171,6 +200,7 @@ class ModelAbstract:
                                                              batch_size=self._batch_size,
                                                              return_hypotheses=True,
                                                              num_workers=self._num_workers)
+            self._transcribe_result = self._transcribe_result if self._model_config['model_type'] == 'CTC' else self._transcribe_result[0]
             self._emission = []
 
             for trascribe_res in self._transcribe_result:
@@ -179,13 +209,15 @@ class ModelAbstract:
 
                 self._emission.append(emiss)
 
-            return [trascribe_res.text.split(' ') for trascribe_res in self._transcribe_result]
+            return [transcribe_res.text.split(' ') for transcribe_res in self._transcribe_result]
+
 
     def _score(self, spans: list) -> int:
         """Метод для получения скоров по списку spans объектов."""
         
         return sum(s.score * len(s) for s in spans) / sum(len(s) for s in spans)
-    
+
+
     def _split_wav(self, speech_filename: str,
                    boundaries: list[list[float]]) -> list[tuple[Tensor]]:
         """Метод для разбиения файла на waveform сегменты по 
@@ -263,11 +295,11 @@ class ModelAbstract:
             if self._duration_to_split:
                 self._segments = self._voice_activity_detection(speech_filename)
                 logging.info(f'Аудиозапись разбита на {len(self._segments)} сегментов')
-                self._wav_transcript = self._tokenize(self._segments)
             else:
                 speech_audio, sr = librosa.load(speech_filename)
                 self._segments = [numpy.array(speech_audio)]
-                self._wav_transcript = self._tokenize(self._segments)
+
+            self._wav_transcript = self._tokenize(self._segments)
 
             logging.info('Транскрибация аудиофайла завершена')
 
@@ -277,7 +309,7 @@ class ModelAbstract:
 
             for segment in self._wav_transcribe['segments']:
                 for word in segment['words']:
-                    token = word['word']
+                    token = word['word'].strip()
 
                     self._wav_transcript.append(token)
             
@@ -287,7 +319,7 @@ class ModelAbstract:
         elif self._model_name == 'Vosk':
             wf = wave.open(speech_filename, 'rb')
 
-            recognizer = KaldiRecognizer(self.model, wf.getframerate())
+            recognizer = KaldiRecognizer(self._model, wf.getframerate())
             recognizer.SetWords(True)
             recognizer.SetPartialWords(True)
         
@@ -371,9 +403,9 @@ class ModelAbstract:
         elif self._model_name == 'Whisper':
             forced_alignments = []
 
-            for segment in self._wav_transcript['segments']:
+            for segment in self._wav_transcribe['segments']:
                 for word in segment['words']:
-                    token = word['word']
+                    token = word['word'].strip()
                     ts_begin = word['start']
                     ts_end = word['end']
 

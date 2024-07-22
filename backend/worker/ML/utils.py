@@ -2,16 +2,62 @@ import json
 import os
 import numpy as np
 import subprocess
+import torchaudio
 
 from io import BytesIO
 from typing import List, Tuple
 
 from pydub import AudioSegment
 from pyannote.audio import Pipeline
-from fuzzywuzzy import process
+
+from nemo.collections.asr.modules.audio_preprocessing import (
+    AudioToMelSpectrogramPreprocessor as NeMoAudioToMelSpectrogramPreprocessor,
+)
+from nemo.collections.asr.parts.preprocessing.features import (
+    FilterbankFeaturesTA as NeMoFilterbankFeaturesTA,
+)
 
 
 RUSSIAN_VOCABULARY = {letter: index + 1 for index, letter in enumerate("абвгдежзийклмнопрстуфхцчшщъыьэюя")}
+
+
+class FilterbankFeaturesTA(NeMoFilterbankFeaturesTA):
+    def __init__(self, mel_scale: str = "htk", wkwargs=None, **kwargs):
+        if "window_size" in kwargs:
+            del kwargs["window_size"]
+        if "window_stride" in kwargs:
+            del kwargs["window_stride"]
+
+        super().__init__(**kwargs)
+
+        self._mel_spec_extractor: torchaudio.transforms.MelSpectrogram = (
+            torchaudio.transforms.MelSpectrogram(
+                sample_rate=self._sample_rate,
+                win_length=self.win_length,
+                hop_length=self.hop_length,
+                n_mels=kwargs["nfilt"],
+                window_fn=self.torch_windows[kwargs["window"]],
+                mel_scale=mel_scale,
+                norm=kwargs["mel_norm"],
+                n_fft=kwargs["n_fft"],
+                f_max=kwargs.get("highfreq", None),
+                f_min=kwargs.get("lowfreq", 0),
+                wkwargs=wkwargs,
+            )
+        )
+
+
+class AudioToMelSpectrogramPreprocessor(NeMoAudioToMelSpectrogramPreprocessor):
+    def __init__(self, mel_scale: str = "htk", **kwargs):
+        super().__init__(**kwargs)
+        kwargs["nfilt"] = kwargs["features"]
+        del kwargs["features"]
+        self.featurizer = (
+            FilterbankFeaturesTA(  # Deprecated arguments; kept for config compatibility
+                mel_scale=mel_scale,
+                **kwargs,
+            )
+        )
 
 
 def audiosegment_to_numpy(audiosegment: AudioSegment) -> np.ndarray:
@@ -79,42 +125,20 @@ def convert_wav(speech_filename):
     
     return new_filename
 
-def filter(forced_alignments: list[list]) -> list[list]:
-        """Метод для фильтрации размеченных токенов с временными метками, пока 
-        рассматриваются 3 кейса: некоторые мусорные слова, матные и повторяющиеся. Параметр
-        is_trash означает нужно ли удалять данный токен"""
-        
-        with open("wordlist/bad_words.json", "r") as file:
-            bad_words = file.read()
-            bad_words = json.loads(bad_words)
- 
-        waste_words = ['ну', 'типа', 'кста', 'типо', 'блин', 'че', 'чё', "аааа",
-                    "ээээ",
-                    "нуууу",
-                    "короче",
-                    "типа",
-                    "блин",
-                    "жесть"]
-        
-        marked_tokens = []
-        prev_word = ''
-        
-        for token_with_time in forced_alignments:
-            is_trash = False
-            # 1 case - waste words
-            similiar_waste = process.extractOne(token_with_time[0], waste_words)
-            
-            if int(similiar_waste[-1]) > 95:
-                is_trash = True
-            
-            # 2 case - ban words
-            is_trash = token_with_time[0] in bad_words.keys()
-                
-            # 3 case - repeat words
-            if token_with_time[0] == prev_word:
-                is_trash = True
-            
-            prev_word = token_with_time[0]
-            marked_tokens.append([token_with_time[0], token_with_time[1], token_with_time[2], is_trash])
 
-        return marked_tokens
+def normalize_transcribe(transcribe):
+    normalized_transcribe = []
+    sym_list = ('.', ',', '-', '?', '!', ';', ':', '"', "'", '(', ')', '—')
+    for token in transcribe:
+        tk = token.lower()
+        for sym in sym_list:
+            tk = tk.replace(sym, '').strip()
+    normalized_transcribe.append(tk)
+    return normalized_transcribe
+
+
+def normalize_forced_alignment(alignment):
+    normalized_alignment = alignment
+    for i in range(len(alignment)):
+        normalized_alignment[i] = [alignment[i][0], round(alignment[i][1], 2), round(alignment[i][2], 2)]
+    return normalized_alignment

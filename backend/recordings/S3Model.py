@@ -25,20 +25,20 @@ class S3Client:
     async def push_file(self, FileData: bytes, UserId: int) -> str:
         url = f'{str(UserId)}{str(datetime.now())}.wav'.replace(' ', '_').replace(':', '.')
 
-        f = open(f'local_save/{url}', 'wb')
+        f = open(f'/home/ubuntu/backend/env/local_save/{url}', 'wb')
         f.write(FileData)
         f.close()
 
         return url
 
     async def get_file(self, url: str):
-        return open(f'local_save/{url}', 'rb').read()
+        return open(f'/home/ubuntu/backend/env/local_save/{url}', 'rb').read()
 
     async def delete_file(self, url: str):
-        os.remove(f'local_save/{url}')
+        os.remove(f'/home/ubuntu/backend/env/local_save/{url}')
 
     async def put_file(self, FileData: bytes, url: str) -> str:
-        f = open(f'local_save/{url}', 'wb')
+        f = open(f'/home/ubuntu/backend/env/local_save/{url}', 'wb')
         f.write(FileData)
         f.close()
 
