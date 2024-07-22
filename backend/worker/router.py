@@ -13,6 +13,7 @@ from ..tags.models import Tag, TagType
 
 from .ML.main import asr, bert
 # from .ML.utils import filter
+from ..sound.sound import sound_filtration
 
 from ..recordings.models import Recording
 from ..recordings.S3Model import ClientS3
@@ -40,15 +41,14 @@ async def get_tags_from_model(recording_url, recording_id):
 @broker.subscriber("recording_compute")
 async def recording_compute(recording_id: int):
     async with session_factory() as session:
-        # recording = await session.get(Recording, recording_id)
-        recording = {"url": "12024-07-22_09.17.35.224357.wav"}
-        byte = await ClientS3.get_file(recording["url"])
+        recording = await session.get(Recording, recording_id)
+        byte = await sound_filtration(await ClientS3.get_file(recording.url))
 
         time.sleep(5)
 
         await ClientS3.put_file(byte, recording["url"])
 
-        recording.soundwave = str(await get_road(byte))
+        #recording.soundwave = str(await get_road(byte))
 
         await get_tags_from_model("/home/ubuntu/backend/env/local_save/" + recording["url"], recording_id)
 
