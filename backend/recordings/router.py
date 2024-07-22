@@ -66,7 +66,7 @@ async def put_recording_name(recording: RecordingUpdate, user: User = Depends(ge
 @router.get('/{recording_id}')
 async def get_recording(recording_id: int, user: User = Depends(get_current_user),
                         session: AsyncSession = Depends(get_session)) -> RecordingRel:
-    recording = await session.get(Recording, id)
+    recording = await session.get(Recording, recording_id)
 
     if not recording:
         raise HTTPException(404)
