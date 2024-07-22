@@ -66,12 +66,7 @@ async def put_recording_name(recording: RecordingUpdate, user: User = Depends(ge
 @router.get('/{recording_id}')
 async def get_recording(recording_id: int, user: User = Depends(get_current_user),
                         session: AsyncSession = Depends(get_session)) -> RecordingRel:
-    query = (
-        select(Recording).filter(Recording.id == recording_id)
-        .join(Recording.tags).filter(Tag.tag_type != TagType.SOURCETAG)
-    )
-
-    recording = await session.scalar(query)
+    recording = await session.get(Recording, id)
 
     if not recording:
         raise HTTPException(404)
