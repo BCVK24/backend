@@ -1,9 +1,12 @@
 import wave
 
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Form
+from faststream.redis import RedisBroker
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import contains_eager
+from sqlalchemy import select
 
 from ..db.dependencies import get_session
 from ..users.auth import get_current_user
@@ -12,7 +15,6 @@ from .relschemas import RecordingRel
 from .S3Model import ClientS3
 from .schemas import RecordingRead, RecordingUpdate
 from ..users.models import User
-from faststream.redis import RedisBroker
 
 from ..tags.models import Tag, TagType
 
@@ -29,10 +31,8 @@ async def delete_recording(recording_id: int, user: User = Depends(get_current_u
 
     if not get_rec:
         raise HTTPException(404)
-
     if get_rec.creator_id != user.id:
         raise HTTPException(401)
-
     if get_rec.processing:
         raise HTTPException(425)
 
@@ -53,7 +53,6 @@ async def put_recording_name(recording: RecordingUpdate, user: User = Depends(ge
 
     if not recording_db:
         raise HTTPException(404)
-
     if recording_db.creator_id != user.id:
         raise HTTPException(401)
 
@@ -71,7 +70,6 @@ async def get_recording(recording_id: int, user: User = Depends(get_current_user
 
     if not recording:
         raise HTTPException(404)
-
     if recording.creator_id != user.id:
         raise HTTPException(401)
 
@@ -93,11 +91,11 @@ async def upload_recording(user: User = Depends(get_current_user), recording: st
     recording_db = Recording(url=url, creator_id=user.id, title=recording, duration=duration,
                              soundwave="soundwave", processing=True)
 
-    session.add(recording_db)
-
     try:
+        session.add(recording_db)
+
         await session.commit()
-    except IntegrityError as err:
+    except Exception as e:
         raise HTTPException(401)
 
     async with RedisBroker("redis://redis:6379/0") as reddis:
@@ -106,17 +104,21 @@ async def upload_recording(user: User = Depends(get_current_user), recording: st
     return RecordingRead.model_validate(recording_db, from_attributes=True)
 
 
-@router.get('/get_model_tags/{recording_id}') # <- DONT USE IT, IT`S BROKEN
+@router.post('/model_tags/{recording_id}', tags=['model tags'])
 async def get_model_tags(recording_id: int, user: User = Depends(get_current_user),
-                         session: AsyncSession = Depends(get_session)) -> RecordingRead:
+                         session: AsyncSession = Depends(get_session)) -> RecordingRel:
     recording = await session.get(Recording, recording_id)
 
     if not recording:
         raise HTTPException(404)
+    if recording.creator_id != user.id:
+        raise HTTPException(401)
     if recording.processing:
         raise HTTPException(425)
 
-    Tag.delete_model_tag_by_recording_id(recording)
+    stmt = Tag.delete_model_tag_by_recording_id(recording_id)
+
+    await session.execute(stmt)
 
     tag_list = await session.scalars(Tag.get_source_tag_by_recording_id(recording_id))
 
@@ -127,4 +129,25 @@ async def get_model_tags(recording_id: int, user: User = Depends(get_current_use
 
     await session.commit()
 
-    return RecordingRead.model_validate(recording, from_attributes=True)
+    return RecordingRel.model_validate(recording, from_attributes=True)
+
+
+@router.delete('/model_tags/{recording_id}', tags=['model tags'])
+async def delete_model_tags(recording_id: int, user: User = Depends(get_current_user),
+                         session: AsyncSession = Depends(get_session)) -> RecordingRel:
+    recording = await session.get(Recording, recording_id)
+
+    if not recording:
+        raise HTTPException(404)
+    if recording.creator_id != user.id:
+        raise HTTPException(401)
+    if recording.processing:
+        raise HTTPException(425)
+
+    stmt = Tag.delete_model_tag_by_recording_id(recording_id)
+
+    await session.execute(stmt)
+
+    await session.commit()
+
+    return RecordingRel.model_validate(recording, from_attributes=True)

@@ -6,7 +6,7 @@ from ..tags.schemas import TagRead
 
 class RecordingRel(RecordingRead):
     creator: UserRead
-    tags: list[TagRead]
+    display_tags: list[TagRead]
     results: list[ResultRead]
     #soundwave: str
     url: str

@@ -22,12 +22,17 @@ async def update_tag(tag: TagUpdate, user: User = Depends(get_current_user),
 
     if not tag_db:
         raise HTTPException(404)
+    if tag_db.recording.creator_id != user.id:
+        raise HTTPException(401)
 
     tag_db.start = tag.start
     tag_db.end = tag.end
     tag_db.description = tag.description
 
-    await session.commit()
+    try:
+        await session.commit()
+    except Exception as e:
+        raise HTTPException(401)
 
     return TagRead.model_validate(tag_db, from_attributes=True)
 
@@ -39,12 +44,17 @@ async def delete_tag(tag_id: int, user: User = Depends(get_current_user),
 
     if not tag_get:
         raise HTTPException(404)
+    if tag_get.recording.creator_id != user.id:
+        raise HTTPException(401)
 
     tag_return = TagRead.model_validate(tag_get, from_attributes=True)
 
-    await session.delete(tag_get)
+    try:
+        await session.delete(tag_get)
 
-    await session.commit()
+        await session.commit()
+    except Exception as e:
+        raise HTTPException(401)
 
     return tag_return
 
@@ -57,17 +67,24 @@ async def create_tag(tag: TagCreate, user: User = Depends(get_current_user),
 
     recording = await session.get(Recording, tag.recording_id)
 
+    if not recording:
+        raise HTTPException(404)
     if recording.processing:
         raise HTTPException(425)
+    if recording.creator_id != user.id:
+        raise HTTPException(401)
 
     tag_get = Tag(**tag.model_dump(), tag_type=TagType.USERTAG)
 
     tag_get.start = max(0, tag_get.start)
     tag_get.end = min(recording.duration, tag_get.end)
 
-    session.add(tag_get)
+    try:
+        session.add(tag_get)
 
-    await session.commit()
+        await session.commit()
+    except Exception as e:
+        raise HTTPException(401)
 
     return TagRead.model_validate(tag_get, from_attributes=True)
 

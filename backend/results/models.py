@@ -10,7 +10,7 @@ from ..db.crud import CRUD
 class Result(Base, CRUD):
     __tablename__ = 'result'
     id: Mapped[intpk]
-    source_id: Mapped[int] = mapped_column(ForeignKey('recordings.id', ondelete='CASCADE'))
+    source_id: Mapped[int] = mapped_column(ForeignKey('recording.id', ondelete='CASCADE'))
     url: Mapped[str]
     created_at: Mapped[dtnow]
     duration: Mapped[int]

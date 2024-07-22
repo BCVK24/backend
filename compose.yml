@@ -22,18 +22,18 @@ services:
     volumes:
       - ./env/db:/var/lib/postgresql/data
 
-  worker:
-     build:
-       context: .
-       dockerfile: ./Dockerfile.worker
-     depends_on:
-       - db
-       - backend
-       - redis
-     volumes:
-       - ./env/local_save:/app/local_save
-     ports:
-       - 6379:6379
+#  worker:
+#     build:
+#       context: .
+#       dockerfile: ./Dockerfile.worker
+#     depends_on:
+#       - db
+#       - backend
+#       - redis
+#     volumes:
+#       - ./env/local_save:/app/local_save
+#     ports:
+#       - 6379:6379
 
   redis:
     image: redis:latest

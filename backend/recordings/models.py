@@ -7,7 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
 class Recording(Base, CRUD):
-    __tablename__ = 'recordings'
+    __tablename__ = 'recording'
     id: Mapped[intpk]
     url: Mapped[str]
     title: Mapped[str]
@@ -17,6 +17,23 @@ class Recording(Base, CRUD):
     soundwave: Mapped[str]
     processing: Mapped[bool]
 
-    creator: Mapped['User'] = relationship(back_populates='recordings', lazy='joined')
-    tags: Mapped[list['Tag']] = relationship(back_populates='recording', lazy='selectin', cascade='all, delete-orphan')
-    results: Mapped[list['Result']] = relationship(back_populates='source', lazy='selectin', cascade='all, delete-orphan')
+    creator: Mapped['User'] = relationship(
+        back_populates='recordings', 
+        lazy='joined'
+    )
+    tags: Mapped[list['Tag']] = relationship(
+        back_populates='recording',
+        lazy='selectin',
+        cascade='all, delete-orphan'
+    )
+    display_tags: Mapped[list['Tag']] = relationship(
+        back_populates='recording',
+        lazy='selectin',
+        cascade='all, delete-orphan',
+        primaryjoin='and_(Recording.id == Tag.recording_id, Tag.tag_type != "SOURCETAG")'
+    )
+    results: Mapped[list['Result']] = relationship(
+        back_populates='source', 
+        lazy='selectin', 
+        cascade='all, delete-orphan'
+    )

@@ -1,4 +1,4 @@
-from sqlalchemy import Select, select
+from sqlalchemy import select
 from sqlalchemy.orm import Mapped, relationship
 
 from ..db.crud import CRUD
@@ -14,7 +14,7 @@ class User(Base, CRUD):
     recordings: Mapped[list['Recording']] = relationship(back_populates='creator', lazy='selectin')
 
     @classmethod
-    def get_by_vk_id(cls, vk_id: str) -> Select:
+    def get_by_vk_id(cls, vk_id: str):
         query = (
             select(User).where(cls.vk_id == vk_id)
         )

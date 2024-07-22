@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import ForeignKey, delete, select
+from sqlalchemy import ForeignKey, delete, select, and_
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..db.database import Base
@@ -18,7 +18,7 @@ class TagType(enum.Enum):
 class Tag(Base, CRUD):
     __tablename__ = 'tag'
     id: Mapped[intpk]
-    recording_id: Mapped[int] = mapped_column(ForeignKey('recordings.id', ondelete='CASCADE'))
+    recording_id: Mapped[int] = mapped_column(ForeignKey('recording.id', ondelete='CASCADE'))
     start: Mapped[float]
     end: Mapped[float]
     description: Mapped[str]
@@ -28,11 +28,9 @@ class Tag(Base, CRUD):
 
     @classmethod
     def delete_model_tag_by_recording_id(cls, recording_id):
-        delete(Tag).where(cls.recording_id == recording_id and cls.tag_type == TagType.MODELTAG)
+        return delete(Tag).where(and_(cls.recording_id == recording_id, cls.tag_type == TagType.MODELTAG))
 
     @classmethod
     def get_source_tag_by_recording_id(cls, recording_id):
-        query = (
-            select(Tag).where(cls.recording_id == recording_id and cls.tag_type == TagType.SOURCETAG)
-        )
-        return query
+        return select(Tag).where(and_(cls.recording_id == recording_id, cls.tag_type == TagType.SOURCETAG))
+        
