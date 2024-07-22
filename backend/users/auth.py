@@ -46,7 +46,7 @@ async def get_user_by_vk_app(token: str) -> str:
 
 
 async def get_user_by_bot(token: str) -> str:
-    return base64.b64decode(token.strip("VKBOT ") + "===").decode().replace("'", '').strip("?")
+    return (token.strip("VKBOT ")).replace("'", '').strip("?")
 
 
 async def get_current_user(token: str = Security(api_key_header), session: AsyncSession = Depends(get_session)) -> User:
